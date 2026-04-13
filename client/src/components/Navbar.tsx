@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown } from 'lucide-react'
+import LangSwitcher from './LangSwitcher'
 
 const categories = [
   { name: 'T-Shirt', label: 'T恤' },
@@ -47,7 +48,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           <Link to="/" className="text-sm font-medium text-ink hover:text-vermilion transition-colors">
             首页
           </Link>
@@ -76,10 +77,14 @@ export default function Navbar() {
           <Link to="/join" className="text-sm font-medium text-ink hover:text-vermilion transition-colors">
             艺术家入驻
           </Link>
+          <Link to="/creator" className="text-sm font-medium text-ink hover:text-vermilion transition-colors">
+            创作者
+          </Link>
         </div>
 
         {/* Right actions */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md: flex items-center gap-4">
+          <LangSwitcher />
           <Link
             to="/join"
             className="px-5 py-2 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 transition-colors"
@@ -102,6 +107,7 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-paper border-t border-light-ink">
           <div className="px-6 py-4 flex flex-col gap-4">
+            <LangSwitcher />
             <Link to="/" className="text-sm font-medium text-ink">首页</Link>
             <div className="flex flex-col gap-2">
               <p className="text-xs text-smoke uppercase tracking-wider">产品分类</p>
@@ -116,6 +122,7 @@ export default function Navbar() {
               ))}
             </div>
             <Link to="/join" className="text-sm font-medium text-ink">艺术家入驻</Link>
+            <Link to="/creator" className="text-sm font-medium text-ink">创作者后台</Link>
             <Link
               to="/join"
               className="mt-2 px-5 py-2.5 bg-ink text-paper text-sm font-medium rounded-lg text-center"
