@@ -1,54 +1,27 @@
 import { useState } from 'react'
-import { Check, ArrowRight, ArrowLeft, Upload } from 'lucide-react'
+import { Check, ArrowRight, ArrowLeft } from 'lucide-react'
 
-const steps = ['注册账号', '选择方案', '上传作品']
+const steps = ['注册账号', '选择方案', '完成']
 
 const plans = [
-  {
-    id: 'free',
-    name: '免费版',
-    price: '¥0',
-    royalty: '8%',
-    features: ['最多 10 件作品', '基础分析'],
-  },
-  {
-    id: 'basic',
-    name: '基础版',
-    price: '¥299',
-    royalty: '30%',
-    features: ['最多 50 件作品', '优先审核', 'Instagram 同步'],
-    recommended: true,
-  },
-  {
-    id: 'pro',
-    name: '专业版',
-    price: '¥599',
-    royalty: '45%',
-    features: ['无限作品', '优先审核', 'Instagram 同步', '专属客服'],
-  },
+  { id: 'free', name: '免费版', price: '¥0', priceSub: '/年', royalty: '8%', features: ['最多 10 件作品', '1 个外部平台', '基础数据分析'] },
+  { id: 'basic', name: '基础版', price: '¥299', priceSub: '/年', royalty: '30%', recommended: true, features: ['最多 50 件作品', '3 个外部平台', '优先审核', '高级数据分析'] },
+  { id: 'pro', name: '专业版', price: '¥599', priceSub: '/年', royalty: '45%', features: ['无限作品', '无限外部平台', '优先审核', '专属客服', '优先提现'] },
 ]
 
 export default function Join() {
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-    artist_name: '',
-    plan: 'basic',
-  })
-  const [dragOver, setDragOver] = useState(false)
+  const [form, setForm] = useState({ username: '', email: '', password: '', artist_name: '', plan: 'basic' })
 
   return (
     <div className="pt-16 min-h-screen bg-paper">
-
-      {/* Page title */}
+      {/* Header */}
       <div className="px-6 pt-12 pb-6 text-center">
         <h1 className="text-2xl font-semibold text-ink">艺术家入驻</h1>
         <p className="text-sm text-smoke mt-1">三步开启你的全球版画商店</p>
       </div>
 
-      {/* Step pills */}
+      {/* Steps */}
       <div className="px-6 mb-8">
         <div className="flex items-center justify-center gap-2">
           {steps.map((label, i) => {
@@ -57,20 +30,14 @@ export default function Join() {
             const isDone = step > num
             return (
               <div key={num} className="flex items-center gap-2">
-                <div
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    isDone
-                      ? 'bg-bamboo text-paper'
-                      : isActive
-                      ? 'bg-vermilion text-paper'
-                      : 'bg-light-ink text-smoke'
-                  }`}
-                >
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  isDone ? 'bg-bamboo text-paper' : isActive ? 'bg-vermilion text-paper' : 'bg-light-ink text-smoke'
+                }`}>
                   {isDone ? <Check size={12} /> : <span>{num}</span>}
                   <span className="hidden sm:inline">{label}</span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className={`w-6 h-px ${step > num ? 'bg-bamboo' : 'bg-light-ink'}`} />
+                  <div className={`w-8 h-px ${step > num ? 'bg-bamboo' : 'bg-light-ink'}`} />
                 )}
               </div>
             )
@@ -78,155 +45,108 @@ export default function Join() {
         </div>
       </div>
 
-      {/* Form area */}
-      <div className="px-6 pb-20">
+      <div className="px-6 pb-20 max-w-sm mx-auto">
 
-        {/* STEP 1: Register */}
+        {/* Step 1 */}
         {step === 1 && (
-          <div className="max-w-sm mx-auto space-y-4">
+          <div className="space-y-4">
             <div>
               <p className="text-xs text-smoke mb-1.5">艺术家名称</p>
-              <input
-                type="text"
-                value={form.artist_name}
-                onChange={(e) => setForm({ ...form, artist_name: e.target.value })}
-                placeholder="如李墨白"
-                className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion transition-colors"
-              />
+              <input type="text" value={form.artist_name} onChange={e => setForm({...form, artist_name: e.target.value})} placeholder="如李墨白" className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion" />
             </div>
             <div>
               <p className="text-xs text-smoke mb-1.5">用户名</p>
-              <input
-                type="text"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                placeholder="设置唯一用户名"
-                className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion transition-colors"
-              />
+              <input type="text" value={form.username} onChange={e => setForm({...form, username: e.target.value})} placeholder="设置唯一用户名" className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion" />
             </div>
             <div>
               <p className="text-xs text-smoke mb-1.5">邮箱</p>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="用于登录和通知"
-                className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion transition-colors"
-              />
+              <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="用于登录和通知" className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion" />
             </div>
             <div>
               <p className="text-xs text-smoke mb-1.5">密码</p>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="至少 8 位"
-                className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion transition-colors"
-              />
+              <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="至少 8 位" className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion" />
             </div>
-            <button
-              onClick={() => setStep(2)}
-              className="w-full py-3.5 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 transition-colors flex items-center justify-center gap-2 mt-6"
-            >
+            <button onClick={() => setStep(2)} className="w-full py-3.5 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 flex items-center justify-center gap-2 mt-4">
               下一步 <ArrowRight size={16} />
             </button>
           </div>
         )}
 
-        {/* STEP 2: Plans */}
+        {/* Step 2 */}
         {step === 2 && (
-          <div className="max-w-sm mx-auto">
-            <p className="text-xs text-smoke mb-4 text-center">选择你的订阅方案</p>
-            <div className="space-y-3">
-              {plans.map((plan) => {
-                const selected = form.plan === plan.id
-                return (
-                  <button
-                    key={plan.id}
-                    onClick={() => setForm({ ...form, plan: plan.id })}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                      selected
-                        ? 'border-vermilion bg-vermilion/5'
-                        : 'border-light-ink bg-paper hover:border-smoke'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-semibold text-ink">{plan.name}</p>
-                        <p className="text-xs text-vermilion mt-0.5">{plan.royalty} 版税</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold text-ink">{plan.price}</p>
-                        <p className="text-xs text-smoke">/年</p>
-                      </div>
+          <div>
+            <p className="text-xs text-smoke mb-4 text-center">选择您的订阅方案</p>
+            <div className="space-y-3 mb-6">
+              {plans.map((plan) => (
+                <button
+                  key={plan.id}
+                  onClick={() => setForm({...form, plan: plan.id})}
+                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                    form.plan === plan.id ? 'border-vermilion bg-vermilion/5' : 'border-light-ink bg-paper hover:border-smoke'
+                  }`}
+                >
+                  {plan.recommended && (
+                    <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-vermilion text-paper text-xs rounded-full">推荐</span>
+                  )}
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">{plan.name}</p>
+                      <p className="text-xs text-vermilion mt-0.5">{plan.royalty} 版税</p>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {plan.features.map((f) => (
-                        <span key={f} className="text-xs text-smoke bg-warm-gray px-2 py-0.5 rounded-full">
-                          {f}
-                        </span>
-                      ))}
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-ink">{plan.price}</p>
+                      <p className="text-xs text-smoke">{plan.priceSub}</p>
                     </div>
-                    {selected && (
-                      <div className="absolute top-4 right-4">
-                        <Check size={14} className="text-vermilion" />
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {plan.features.map((f) => (
+                      <span key={f} className="text-xs text-smoke bg-warm-gray px-2 py-0.5 rounded-full">{f}</span>
+                    ))}
+                  </div>
+                  {form.plan === plan.id && (
+                    <div className="absolute top-4 right-4"><Check size={14} className="text-vermilion" /></div>
+                  )}
+                </button>
+              ))}
             </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep(1)}
-                className="px-5 py-3 border border-light-ink text-sm text-smoke rounded-lg hover:bg-warm-gray transition-colors flex items-center gap-1.5"
-              >
+            <div className="flex gap-3">
+              <button onClick={() => setStep(1)} className="px-5 py-3 border border-light-ink text-sm text-smoke rounded-lg hover:bg-warm-gray flex items-center gap-1.5">
                 <ArrowLeft size={14} /> 返回
               </button>
-              <button
-                onClick={() => setStep(3)}
-                className="flex-1 py-3 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 transition-colors flex items-center justify-center gap-2"
-              >
+              <button onClick={() => setStep(3)} className="flex-1 py-3 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 flex items-center justify-center gap-2">
                 下一步 <ArrowRight size={16} />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Upload */}
+        {/* Step 3 */}
         {step === 3 && (
-          <div className="max-w-sm mx-auto">
-            <p className="text-xs text-smoke mb-4 text-center">
-              上传第一件作品（可选，之后也可以上传）
+          <div className="text-center">
+            <div className="w-16 h-16 bg-bamboo/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check size={32} className="text-bamboo" />
+            </div>
+            <h2 className="text-xl font-semibold text-ink mb-2">入驻成功！</h2>
+            <p className="text-sm text-smoke mb-6">
+              欢迎加入 Layers，您的作品即将触达全球消费者。
             </p>
-
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => { e.preventDefault(); setDragOver(false) }}
-              className={`border-2 border-dashed rounded-xl p-8 text-center mb-5 transition-colors ${
-                dragOver ? 'border-vermilion bg-vermilion/5' : 'border-light-ink'
-              }`}
-            >
-              <Upload size={28} className="mx-auto mb-3 text-smoke" strokeWidth={1.5} />
-              <p className="text-sm font-medium text-ink mb-1">点击选择文件</p>
-              <p className="text-xs text-smoke">支持 JPG/PNG，最大 10MB</p>
+            <div className="bg-warm-gray rounded-xl p-5 text-left mb-6">
+              <p className="text-sm font-medium text-ink mb-3">接下来：</p>
+              <ul className="space-y-2">
+                {['上传您的第一件原创作品', '连接 Gumroad / Etsy 等外部平台', '等待审核通过，作品自动上架'].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-smoke">
+                    <Check size={14} className="text-bamboo mt-0.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep(2)}
-                className="px-5 py-3 border border-light-ink text-sm text-smoke rounded-lg hover:bg-warm-gray transition-colors flex items-center gap-1.5"
-              >
-                <ArrowLeft size={14} /> 返回
-              </button>
-              <button
-                onClick={() => alert('注册成功！')}
-                className="flex-1 py-3 bg-vermilion text-paper text-sm font-medium rounded-lg hover:bg-vermilion/90 transition-colors flex items-center justify-center gap-2"
-              >
-                完成入驻 <Check size={16} />
-              </button>
-            </div>
+            <button onClick={() => alert('跳转到创作者后台')} className="w-full py-3.5 bg-vermilion text-paper text-sm font-medium rounded-lg hover:bg-vermilion/90 flex items-center justify-center gap-2">
+              进入创作者后台 <ArrowRight size={16} />
+            </button>
+            <a href="/" className="block mt-3 text-sm text-smoke hover:text-vermilion">
+              先去商店看看 →
+            </a>
           </div>
         )}
       </div>
