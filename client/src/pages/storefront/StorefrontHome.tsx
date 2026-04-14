@@ -1,17 +1,21 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Shirt, Frame, Coffee, ShoppingBag, Smartphone } from 'lucide-react'
 import ArtworkCard from '../../components/ArtworkCard'
+import api from '../../services/api'
 
-const featuredArtworks = [
-  { id: 1, title: 'Mountain Waters', artist_name: 'Li Mobai', image_url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600&q=80', price: 45 },
-  { id: 2, title: 'Urban Nights', artist_name: 'Chen Ruoshui', image_url: 'https://images.unsplash.com/photo-1549490349-8643362247b5?w=600&q=80', price: 38 },
-  { id: 3, title: 'Bamboo Forest', artist_name: 'Zhang Sumiao', image_url: 'https://images.unsplash.com/photo-1578926288207-a90a5366759d?w=600&q=80', price: 52 },
-  { id: 4, title: 'Sunset Glow', artist_name: 'Wang Ranqing', image_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80', price: 40 },
-  { id: 5, title: 'Flower Study', artist_name: 'Zhao Qingya', image_url: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=600&q=80', price: 35 },
-  { id: 6, title: 'Ancient Alley', artist_name: 'Zhou Yifeng', image_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&q=80', price: 42 },
-  { id: 7, title: 'Abstract Ink', artist_name: 'Wu Taosheng', image_url: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=600&q=80', price: 58 },
-  { id: 8, title: 'Spring River', artist_name: 'Zheng Yunandan', image_url: 'https://images.unsplash.com/photo-1515405295579-ba7b45403062?w=600&q=80', price: 47 },
-]
+interface Artwork {
+  id: number
+  title: string
+  artist_name: string
+  username: string
+  avatar: string
+  mockup_url: string
+  original_image_url: string
+  tags: string[]
+  view_count: number
+  created_at: string
+}
 
 const categories = [
   { name: 'T-Shirt', label: 'T-Shirt', icon: Shirt, count: 128 },
@@ -23,6 +27,16 @@ const categories = [
 ]
 
 export default function StorefrontHome() {
+  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.getArtworks({ limit: 20 })
+      .then(({ items }: { items: Artwork[] }) => setArtworks(items.filter(a => a.mockup_url || a.original_image_url)))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
@@ -49,16 +63,10 @@ export default function StorefrontHome() {
             Printed on-demand. Shipped worldwide from the US, EU or Australia.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#artworks"
-              className="px-8 py-3.5 bg-paper text-ink font-medium rounded-lg hover:bg-paper/90 transition-colors inline-flex items-center justify-center gap-2"
-            >
+            <a href="#artworks" className="px-8 py-3.5 bg-paper text-ink font-medium rounded-lg hover:bg-paper/90 transition-colors inline-flex items-center justify-center gap-2">
               Shop Now <ArrowRight size={18} />
             </a>
-            <Link
-              to="/join"
-              className="px-8 py-3.5 bg-vermilion text-paper font-medium rounded-lg hover:bg-vermilion/90 transition-colors inline-flex items-center justify-center gap-2"
-            >
+            <Link to="/join" className="px-8 py-3.5 bg-vermilion text-paper font-medium rounded-lg hover:bg-vermilion/90 transition-colors inline-flex items-center justify-center gap-2">
               For Artists
             </Link>
           </div>
@@ -75,19 +83,13 @@ export default function StorefrontHome() {
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold text-ink mb-3">
-              Shop by Product
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-semibold text-ink mb-3">Shop by Product</h2>
             <p className="text-smoke">6 product types · 500+ unique designs</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((cat) => (
-              <a
-                key={cat.name}
-                href="#"
-                className="group flex flex-col items-center p-5 bg-warm-gray rounded-2xl hover:bg-light-ink transition-colors text-center"
-              >
+              <a key={cat.name} href="#artworks" className="group flex flex-col items-center p-5 bg-warm-gray rounded-2xl hover:bg-light-ink transition-colors text-center">
                 <div className="w-12 h-12 flex items-center justify-center mb-3 text-ink group-hover:text-vermilion transition-colors">
                   <cat.icon size={26} strokeWidth={1.5} />
                 </div>
@@ -107,16 +109,27 @@ export default function StorefrontHome() {
               <p className="text-xs uppercase tracking-wider text-smoke mb-2">Featured</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-ink">Discover Unique Art</h2>
             </div>
-            <a href="#" className="hidden md:flex items-center gap-1.5 text-sm text-smoke hover:text-vermilion transition-colors">
-              View All <ArrowRight size={16} />
-            </a>
+            <span className="hidden md:block text-sm text-smoke">{artworks.length} artworks</span>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredArtworks.map((artwork) => (
-              <ArtworkCard key={artwork.id} artwork={artwork} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-paper rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : artworks.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-smoke text-sm mb-3">No artworks yet</p>
+              <Link to="/join" className="text-sm text-vermilion hover:underline">Be the first artist →</Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {artworks.map((artwork) => (
+                <ArtworkCard key={artwork.id} artwork={artwork} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

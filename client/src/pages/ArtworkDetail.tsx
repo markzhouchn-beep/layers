@@ -1,177 +1,145 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { Heart, Share2, ExternalLink } from 'lucide-react'
-import ArtworkCard from '../components/ArtworkCard'
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { Eye, ShoppingBag, ArrowLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import api from '../services/api'
 
-const artworkData = {
-  id: 1,
-  title: 'Mountain Waters',
-  artist_name: 'Li Mobai',
-  username: 'limobai',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
-  description: 'Inspired by traditional Chinese landscape painting, this piece seeks to recreate the atmosphere of "wandering and dwelling" within a modern design language. The use of negative space and contrast creates a sense of depth and tranquility.',
-  image_url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1200&q=80',
-  tags: ['Landscape', 'Ink', 'Modern Chinese'],
-  likes: 234,
-  price: 45,
+const PRODUCTS = [
+  { id: 5, label: 'Classic T-Shirt', price: 35 },
+  { id: 6, label: 'Premium T-Shirt', price: 42 },
+  { id: 10, label: 'Classic Mug', price: 22 },
+  { id: 31, label: 'Poster', price: 28 },
+  { id: 34, label: 'Canvas Print', price: 55 },
+  { id: 21, label: 'Tote Bag', price: 25 },
+  { id: 27, label: 'Phone Case', price: 30 },
+]
+
+interface Artwork {
+  id: number
+  title: string
+  description: string
+  original_image_url: string
+  mockup_url: string
+  tags: string[]
+  view_count: number
+  artist_name: string
+  username: string
+  avatar: string
 }
 
-const products = [
-  { id: 1, name: 'Classic T-Shirt', label: 'T-Shirt', price: 35 },
-  { id: 2, name: 'Premium T-Shirt', label: 'Premium Tee', price: 42 },
-  { id: 3, name: 'Canvas Print', label: 'Canvas', price: 65 },
-  { id: 4, name: 'Poster', label: 'Poster', price: 25 },
-  { id: 5, name: 'Mug', label: 'Mug', price: 22 },
-  { id: 6, name: 'Tote Bag', label: 'Tote Bag', price: 28 },
-]
-
-const relatedArtworks = [
-  { id: 2, title: 'Urban Nights', artist_name: 'Chen Ruoshui', image_url: 'https://images.unsplash.com/photo-1549490349-8643362247b5?w=600&q=80', price: 38 },
-  { id: 3, title: 'Bamboo Forest', artist_name: 'Zhang Sumiao', image_url: 'https://images.unsplash.com/photo-1578926288207-a90a5366759d?w=600&q=80', price: 52 },
-  { id: 5, title: 'Flower Study', artist_name: 'Zhao Qingya', image_url: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=600&q=80', price: 35 },
-  { id: 7, title: 'Abstract Ink', artist_name: 'Wu Taosheng', image_url: 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=600&q=80', price: 58 },
-]
-
 export default function ArtworkDetail() {
-  const params = useParams()
-  void params.id
-  const [selectedProduct, setSelectedProduct] = useState(products[0])
-  const [selectedSize, setSelectedSize] = useState('M')
-  const [liked, setLiked] = useState(false)
+  const { id } = useParams<{ id: string }>()
+  const [artwork, setArtwork] = useState<Artwork | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0])
 
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+  useEffect(() => {
+    if (!id) return
+    api.getArtwork(id)
+      .then(setArtwork)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto">
+        <div className="animate-pulse">
+          <div className="aspect-[4/3] bg-warm-gray rounded-xl mb-8" />
+          <div className="h-8 bg-warm-gray rounded w-1/2 mb-4" />
+          <div className="h-4 bg-warm-gray rounded w-1/4 mb-8" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!artwork) {
+    return (
+      <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto text-center">
+        <p className="text-smoke">作品不存在或已被删除</p>
+        <Link to="/" className="mt-4 inline-block text-sm text-vermilion hover:underline">返回商店</Link>
+      </div>
+    )
+  }
+
+  const image = artwork.mockup_url || artwork.original_image_url
 
   return (
-    <div className="pt-16">
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <nav className="text-sm text-smoke">
-          <Link to="/" className="hover:text-ink transition-colors">Home</Link>
-          <span className="mx-2">/</span>
-          <Link to="/" className="hover:text-ink transition-colors">Artworks</Link>
-          <span className="mx-2">/</span>
-          <span className="text-ink">{artworkData.title}</span>
-        </nav>
-      </div>
+    <div className="pt-24 pb-20 px-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Back */}
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-smoke hover:text-ink mb-6">
+          <ArrowLeft size={14} /> 返回商店
+        </Link>
 
-      {/* Main */}
-      <div className="max-w-7xl mx-auto px-6 pb-20">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
+        <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
           {/* Image */}
-          <div className="rounded-2xl overflow-hidden bg-warm-gray">
-            <img src={artworkData.image_url} alt={artworkData.title} className="w-full aspect-square object-cover" />
+          <div>
+            <div className="rounded-2xl overflow-hidden bg-warm-gray">
+              {image ? (
+                <img src={image} alt={artwork.title} className="w-full aspect-square object-cover" />
+              ) : (
+                <div className="w-full aspect-square flex items-center justify-center text-smoke/30">No image</div>
+              )}
+            </div>
+            <div className="mt-4 flex items-center gap-4 text-sm text-smoke">
+              <span className="flex items-center gap-1"><Eye size={14} />{artwork.view_count || 0} views</span>
+            </div>
           </div>
 
           {/* Info */}
-          <div className="flex flex-col">
-            <Link to={`/artist/${artworkData.username}`} className="flex items-center gap-3 mb-6 group">
-              <img src={artworkData.avatar} alt={artworkData.artist_name} className="w-10 h-10 rounded-full object-cover" />
-              <div>
-                <p className="text-sm font-medium text-ink group-hover:text-vermilion transition-colors">{artworkData.artist_name}</p>
-                <p className="text-xs text-smoke">Artist</p>
-              </div>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-semibold text-ink mb-2">{artwork.title}</h1>
+            <p className="text-sm text-smoke mb-6">
+              by <Link to={`/artist/${artwork.username}`} className="text-vermilion hover:underline">{artwork.artist_name || artwork.username}</Link>
+            </p>
 
-            <h1 className="text-2xl md:text-3xl font-semibold text-ink mb-3">{artworkData.title}</h1>
+            <p className="text-3xl font-semibold text-ink mb-6">${selectedProduct.price}</p>
 
-            <div className="flex items-center gap-4 mb-6">
-              <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1.5 text-sm transition-colors ${liked ? 'text-vermilion' : 'text-smoke hover:text-vermilion'}`}>
-                <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
-                {artworkData.likes + (liked ? 1 : 0)}
-              </button>
-              <button className="flex items-center gap-1.5 text-sm text-smoke hover:text-ink transition-colors">
-                <Share2 size={16} /> Share
-              </button>
-            </div>
+            {artwork.description && (
+              <p className="text-sm text-smoke leading-relaxed mb-6">{artwork.description}</p>
+            )}
 
-            <p className="text-smoke text-sm leading-relaxed mb-6">{artworkData.description}</p>
-
-            <div className="flex flex-wrap gap-2 mb-8">
-              {artworkData.tags.map((tag) => (
-                <span key={tag} className="px-3 py-1 bg-warm-gray text-sm text-smoke rounded-full text-xs">
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <div className="border-t border-light-ink mb-8" />
-
-            {/* Product picker */}
-            <div className="mb-5">
-              <p className="text-sm font-medium text-ink mb-3">Select Product</p>
-              <div className="grid grid-cols-3 gap-2">
-                {products.map((prod) => (
+            {/* Product selector */}
+            <div className="mb-6">
+              <p className="text-xs text-smoke mb-2">选择产品</p>
+              <div className="grid grid-cols-2 gap-2">
+                {PRODUCTS.map(p => (
                   <button
-                    key={prod.id}
-                    onClick={() => setSelectedProduct(prod)}
-                    className={`py-2.5 px-3 rounded-lg border text-sm transition-colors ${
-                      selectedProduct.id === prod.id
-                        ? 'border-vermilion bg-vermilion/5 text-vermilion'
-                        : 'border-light-ink text-smoke hover:border-ink'
+                    key={p.id}
+                    onClick={() => setSelectedProduct(p)}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      selectedProduct.id === p.id
+                        ? 'border-vermilion bg-vermilion/5'
+                        : 'border-light-ink hover:border-smoke'
                     }`}
                   >
-                    {prod.label}
+                    <p className="text-sm font-medium text-ink">{p.label}</p>
+                    <p className="text-xs text-smoke">${p.price}</p>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Size picker */}
-            {selectedProduct.id <= 2 && (
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-3">
-                  <p className="text-sm font-medium text-ink">Size</p>
-                  <button className="text-xs text-smoke underline">Size Guide</button>
-                </div>
-                <div className="flex gap-2">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`w-11 h-10 rounded-lg border text-sm font-medium transition-colors ${
-                        selectedSize === size
-                          ? 'border-vermilion bg-vermilion/5 text-vermilion'
-                          : 'border-light-ink text-smoke hover:border-ink'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
+            {/* Buy CTA */}
+            <button className="w-full py-4 bg-ink text-paper font-medium rounded-xl hover:bg-ink/80 flex items-center justify-center gap-2 mb-3">
+              <ShoppingBag size={18} /> Buy Now — ${selectedProduct.price}
+            </button>
+            <p className="text-xs text-smoke text-center">
+              Ships worldwide from US/EU/Australia · 7-14 business days
+            </p>
+
+            {/* Tags */}
+            {artwork.tags?.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {(artwork.tags as string[]).map(tag => (
+                  <span key={tag} className="text-xs bg-warm-gray px-2.5 py-1 rounded-full text-smoke">#{tag}</span>
+                ))}
               </div>
             )}
-
-            {/* Price & CTA */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-xs text-smoke mb-0.5">Starting at</p>
-                <p className="text-3xl font-semibold text-ink">${selectedProduct.price}</p>
-              </div>
-              <a
-                href="#"
-                className="px-8 py-3.5 bg-vermilion text-paper font-medium rounded-lg hover:bg-vermilion/90 transition-colors flex items-center gap-2"
-              >
-                Buy on Gumroad <ExternalLink size={16} />
-              </a>
-            </div>
-            <p className="text-xs text-smoke">
-              Ships from US, EU or AU · 7-14 business days delivery
-            </p>
           </div>
         </div>
       </div>
-
-      {/* Related */}
-      <section className="py-20 px-6 bg-warm-gray">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-xl font-semibold text-ink mb-8">More Like This</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedArtworks.map((art) => (
-              <ArtworkCard key={art.id} artwork={art} />
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
