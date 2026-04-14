@@ -8,7 +8,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
-  const { isAuthenticated, user } = useAuth()
+  const { isCreator } = useAuth()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -18,8 +18,8 @@ export default function Navbar() {
 
   useEffect(() => { setMenuOpen(false) }, [location])
 
-  // "For Artists" → logged in → /creator, not logged in → /join
-  const forArtistsTarget = (isAuthenticated && user?.role === 'creator') ? '/creator' : '/join'
+  // "For Artists" → logged in as creator → /creator, else → /join
+  const forArtistsTarget = isCreator ? '/creator' : '/join'
 
   return (
     <>
@@ -67,11 +67,11 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-5">
             <LangSwitcher />
             <Link
-              to={isAuthenticated ? '/creator' : '/join'}
+              to={isCreator ? '/creator' : '/join'}
               className="btn-primary"
               style={{ padding: '6px 14px', fontSize: 14 }}
             >
-              {isAuthenticated ? 'Creator Dashboard' : 'Start Creating'}
+              {isCreator ? 'Creator Dashboard' : 'Start Creating'}
             </Link>
           </div>
 

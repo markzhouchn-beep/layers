@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutDashboard, Image, CreditCard, ExternalLink, Settings, LogOut, Menu, X } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 import CreatorOverview from './Overview'
 import MyArtworks from './MyArtworks'
 import Subscription from './Subscription'
@@ -18,6 +19,7 @@ const tabs = [
 export default function CreatorLayout() {
   const [active, setActive] = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { logout } = useAuth()
 
   const renderContent = () => {
     switch (active) {
@@ -123,6 +125,7 @@ export default function CreatorLayout() {
                 ← Shop
               </Link>
               <button
+                onClick={logout}
                 style={{
                   fontSize: 13,
                   color: '#615d59',

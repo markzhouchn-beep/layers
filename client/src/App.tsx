@@ -11,10 +11,16 @@ import Join from './pages/Join'
 import CreatorLayout from './pages/creator/CreatorLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-8 h-8 border-2 border-vermilion border-t-transparent rounded-full" /></div>
-  return isAuthenticated ? children : <Navigate to="/join" replace />
+function CreatorRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user, loading } = useAuth()
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: '#0075de', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    </div>
+  )
+  if (!isAuthenticated) return <Navigate to="/join" replace />
+  if (user?.role !== 'creator') return <Navigate to="/" replace />
+  return children
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -27,14 +33,22 @@ function AppRoutes() {
   return (
     <div className="min-h-screen flex flex-col bg-paper">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1" style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <Routes>
           <Route path="/" element={<StorefrontHome />} />
           <Route path="/artwork/:id" element={<ArtworkDetail />} />
           <Route path="/artist/:username" element={<ArtistProfile />} />
           <Route path="/join" element={<Join />} />
-          <Route path="/creator/*" element={<ProtectedRoute><CreatorLayout /></ProtectedRoute>} />
-          <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/creator/*" element={
+            <CreatorRoute>
+              <CreatorLayout />
+            </CreatorRoute>
+          } />
+          <Route path="/admin/*" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
         </Routes>
       </main>
       <Footer />

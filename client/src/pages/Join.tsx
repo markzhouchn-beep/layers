@@ -17,7 +17,7 @@ export default function Join() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ username: '', email: '', password: '', artist_name: '', plan: 'basic' })
+  const [form, setForm] = useState({ username: '', email: '', password: '', artist_name: '', plan: 'free' })
 
   const validateStep1 = () => {
     if (!form.artist_name.trim()) return '请填写艺术家名称'
