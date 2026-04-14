@@ -21,6 +21,7 @@ import creatorRoutes from './routes/creator.js'
 import adminRoutes from './routes/admin.js'
 import externalRoutes from './routes/external-platforms.js'
 import printifyRoutes from './routes/printify.js'
+import printifySyncRoutes from './routes/printify-sync.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -40,6 +41,7 @@ app.use('/api/creator', creatorRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/external-platforms', externalRoutes)
 app.use('/api/printify', printifyRoutes)
+app.use('/api/printify-sync', printifySyncRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

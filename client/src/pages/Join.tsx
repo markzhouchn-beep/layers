@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Check, ArrowRight, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Check, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const steps = ['注册账号', '选择方案', '完成']
 
@@ -10,8 +12,46 @@ const plans = [
 ]
 
 export default function Join() {
+  const { register } = useAuth()
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({ username: '', email: '', password: '', artist_name: '', plan: 'basic' })
+
+  const validateStep1 = () => {
+    if (!form.artist_name.trim()) return '请填写艺术家名称'
+    if (!form.username.trim()) return '请填写用户名'
+    if (!form.email.includes('@')) return '请填写有效邮箱'
+    if (form.password.length < 8) return '密码至少 8 位'
+    return ''
+  }
+
+  const handleStep1 = () => {
+    const err = validateStep1()
+    if (err) { setError(err); return }
+    setError('')
+    setStep(2)
+  }
+
+  const handleRegister = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      await register({
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        artist_name: form.artist_name,
+        plan: form.plan,
+      })
+      setStep(3)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '注册失败，请重试')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="pt-16 min-h-screen bg-paper">
@@ -47,9 +87,14 @@ export default function Join() {
 
       <div className="px-6 pb-20 max-w-sm mx-auto">
 
-        {/* Step 1 */}
+        {/* Step 1: Account */}
         {step === 1 && (
           <div className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
+                <AlertCircle size={14} />{error}
+              </div>
+            )}
             <div>
               <p className="text-xs text-smoke mb-1.5">艺术家名称</p>
               <input type="text" value={form.artist_name} onChange={e => setForm({...form, artist_name: e.target.value})} placeholder="如李墨白" className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion" />
@@ -66,22 +111,27 @@ export default function Join() {
               <p className="text-xs text-smoke mb-1.5">密码</p>
               <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="至少 8 位" className="w-full px-4 py-3 bg-warm-gray border border-light-ink rounded-lg text-sm text-ink placeholder:text-smoke/60 focus:outline-none focus:border-vermilion" />
             </div>
-            <button onClick={() => setStep(2)} className="w-full py-3.5 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 flex items-center justify-center gap-2 mt-4">
+            <button onClick={handleStep1} className="w-full py-3.5 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 flex items-center justify-center gap-2">
               下一步 <ArrowRight size={16} />
             </button>
           </div>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2: Plan */}
         {step === 2 && (
           <div>
-            <p className="text-xs text-smoke mb-4 text-center">选择您的订阅方案</p>
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 mb-4">
+                <AlertCircle size={14} />{error}
+              </div>
+            )}
+            <p className="text-xs text-smoke mb-4 text-center">选择您的订阅方案（稍后可更改）</p>
             <div className="space-y-3 mb-6">
               {plans.map((plan) => (
                 <button
                   key={plan.id}
                   onClick={() => setForm({...form, plan: plan.id})}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                  className={`w-full text-left p-4 rounded-xl border-2 transition-all relative ${
                     form.plan === plan.id ? 'border-vermilion bg-vermilion/5' : 'border-light-ink bg-paper hover:border-smoke'
                   }`}
                 >
@@ -113,14 +163,14 @@ export default function Join() {
               <button onClick={() => setStep(1)} className="px-5 py-3 border border-light-ink text-sm text-smoke rounded-lg hover:bg-warm-gray flex items-center gap-1.5">
                 <ArrowLeft size={14} /> 返回
               </button>
-              <button onClick={() => setStep(3)} className="flex-1 py-3 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 flex items-center justify-center gap-2">
-                下一步 <ArrowRight size={16} />
+              <button onClick={handleRegister} disabled={loading} className="flex-1 py-3 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 flex items-center justify-center gap-2 disabled:opacity-60">
+                {loading ? '注册中...' : '完成入驻'} <ArrowRight size={16} />
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 3 */}
+        {/* Step 3: Success */}
         {step === 3 && (
           <div className="text-center">
             <div className="w-16 h-16 bg-bamboo/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -141,7 +191,7 @@ export default function Join() {
                 ))}
               </ul>
             </div>
-            <button onClick={() => alert('跳转到创作者后台')} className="w-full py-3.5 bg-vermilion text-paper text-sm font-medium rounded-lg hover:bg-vermilion/90 flex items-center justify-center gap-2">
+            <button onClick={() => navigate('/creator')} className="w-full py-3.5 bg-vermilion text-paper text-sm font-medium rounded-lg hover:bg-vermilion/90 flex items-center justify-center gap-2">
               进入创作者后台 <ArrowRight size={16} />
             </button>
             <a href="/" className="block mt-3 text-sm text-smoke hover:text-vermilion">
