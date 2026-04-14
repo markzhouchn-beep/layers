@@ -1,103 +1,132 @@
 import { Link } from 'react-router-dom'
-import { Globe2, Share2 } from 'lucide-react'
 
 const footerLinks = {
-  product: [
-    { label: '首页', to: '/' },
-    { label: 'T恤', to: '/category/T-Shirt' },
-    { label: '海报', to: '/category/Poster' },
-    { label: '画布', to: '/category/Canvas' },
+  Shop: [
+    { label: 'All Artworks', to: '/' },
+    { label: 'T-Shirts', to: '/?category=tshirt' },
+    { label: 'Posters', to: '/?category=poster' },
+    { label: 'Canvas Prints', to: '/?category=canvas' },
   ],
-  artists: [
-    { label: '艺术家入驻', to: '/join' },
-    { label: '常见问题', to: '/faq' },
-    { label: '版税说明', to: '/royalties' },
+  Artists: [
+    { label: 'Join as Creator', to: '/join' },
+    { label: 'Creator Dashboard', to: '/creator' },
+    { label: 'Royalties', to: '/' },
+    { label: 'FAQ', to: '/' },
   ],
-  company: [
-    { label: '关于我们', to: '/about' },
-    { label: '联系合作', to: '/contact' },
-    { label: '隐私政策', to: '/privacy' },
+  Company: [
+    { label: 'About', to: '/' },
+    { label: 'Contact', to: '/' },
+    { label: 'Privacy', to: '/' },
+    { label: 'Terms', to: '/' },
   ],
 }
 
 export default function Footer() {
   return (
-    <footer className="bg-ink text-paper/80">
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+    <footer
+      style={{
+        background: '#f6f5f4',
+        borderTop: '1px solid rgba(0,0,0,0.08)',
+      }}
+    >
+      <div className="container mx-auto px-6 py-14">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr repeat(3, 1fr)',
+            gap: 32,
+          }}
+        >
+          {/* Brand column */}
+          <div>
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-                <rect x="2" y="2" width="10" height="10" fill="#fafaf8" />
-                <rect x="16" y="2" width="10" height="10" fill="#c9382a" />
-                <rect x="2" y="16" width="10" height="10" fill="#6b6b6b" />
-                <rect x="16" y="16" width="10" height="10" fill="#fafaf8" />
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                <rect x="1" y="1" width="10" height="10" fill="rgba(0,0,0,0.9)" />
+                <rect x="15" y="1" width="10" height="10" fill="#0075de" />
+                <rect x="1" y="15" width="10" height="10" fill="rgba(0,0,0,0.08)" />
+                <rect x="15" y="15" width="10" height="10" fill="rgba(0,0,0,0.9)" />
               </svg>
-              <span className="text-base font-semibold text-paper">Layers</span>
+              <span
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  letterSpacing: '-0.3px',
+                  color: 'rgba(0,0,0,0.95)',
+                }}
+              >
+                Layers
+              </span>
             </Link>
-            <p className="text-sm text-paper/60 leading-relaxed">
-              中国艺术家 · 全球版画平台<br />
-              让原创艺术走进世界每个角落
+            <p
+              style={{
+                fontSize: 14,
+                color: '#615d59',
+                lineHeight: 1.6,
+                maxWidth: 220,
+              }}
+            >
+              Chinese artists, global prints.
+              <br />
+              Your art, delivered worldwide.
             </p>
-            <div className="flex gap-3 mt-5">
-              <a href="#" aria-label="Instagram" className="text-paper/60 hover:text-paper transition-colors">
-                <Globe2 size={18} />
-              </a>
-              <a href="#" aria-label="Twitter" className="text-paper/60 hover:text-paper transition-colors">
-                <Share2 size={18} />
-              </a>
+            <p
+              className="mt-4"
+              style={{ fontSize: 13, color: '#a39e98' }}
+            >
+              © 2026 Layers
+              <br />
+              layershop.store
+            </p>
+          </div>
+
+          {/* Link columns */}
+          {Object.entries(footerLinks).map(([heading, links]) => (
+            <div key={heading}>
+              <p
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'rgba(0,0,0,0.9)',
+                  marginBottom: 12,
+                  letterSpacing: '-0.05px',
+                }}
+              >
+                {heading}
+              </p>
+              <ul className="flex flex-col gap-2.5">
+                {links.map((l) => (
+                  <li key={l.to}>
+                    <Link
+                      to={l.to}
+                      style={{
+                        fontSize: 14,
+                        color: '#615d59',
+                        textDecoration: 'none',
+                        transition: 'color 0.15s',
+                      }}
+                      className="hover:text-[rgba(0,0,0,0.9)]"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-
-          {/* Links */}
-          <div>
-            <p className="text-xs uppercase tracking-wider text-paper/40 mb-4">产品</p>
-            <ul className="space-y-2.5">
-              {footerLinks.product.map((l) => (
-                <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-paper/70 hover:text-paper transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-paper/40 mb-4">艺术家</p>
-            <ul className="space-y-2.5">
-              {footerLinks.artists.map((l) => (
-                <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-paper/70 hover:text-paper transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wider text-paper/40 mb-4">公司</p>
-            <ul className="space-y-2.5">
-              {footerLinks.company.map((l) => (
-                <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-paper/70 hover:text-paper transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          ))}
         </div>
 
-        <div className="mt-12 pt-8 border-t border-paper/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-paper/40">
-            © 2026 Layers. 中国艺术家 · 全球版画平台
+        <hr className="divider mt-10" />
+        <div className="flex items-center justify-between mt-6">
+          <p style={{ fontSize: 13, color: '#a39e98' }}>
+            Built for artists. Powered by Printify.
           </p>
-          <p className="text-xs text-paper/30">
-            layershop.store
-          </p>
+          <div className="flex items-center gap-1">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="6.5" stroke="#a39e98" />
+              <path d="M7 4v3.5l2 1.5" stroke="#a39e98" strokeWidth="1" strokeLinecap="round" />
+            </svg>
+            <span style={{ fontSize: 13, color: '#a39e98' }}>Worldwide shipping</span>
+          </div>
         </div>
       </div>
     </footer>

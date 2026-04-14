@@ -39,7 +39,6 @@ export default function ArtworkDetail() {
     api.getArtwork(id)
       .then((data: Artwork) => {
         setArtwork(data)
-        // Auto-select matching product based on blueprint
         if (data.printify_blueprint_id) {
           const match = PRODUCTS.find(p => p.printifyId === data.printify_blueprint_id)
           if (match) setSelectedProduct(match)
@@ -49,13 +48,33 @@ export default function ArtworkDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
+  const handleBuy = async () => {
+    if (!artwork) return
+    setBuying(true)
+    setPaymentError('')
+    try {
+      const data = await api.createCheckoutSession(artwork.id, selectedProduct.printifyId)
+      if (data.url) window.location.href = data.url
+    } catch (err: unknown) {
+      setPaymentError(err instanceof Error ? err.message : 'Checkout failed.')
+    } finally {
+      setBuying(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto">
-        <div className="animate-pulse">
-          <div className="aspect-[4/3] bg-warm-gray rounded-xl mb-8" />
-          <div className="h-8 bg-warm-gray rounded w-1/2 mb-4" />
-          <div className="h-4 bg-warm-gray rounded w-1/4 mb-8" />
+      <div style={{ paddingTop: 100, paddingBottom: 80 }}>
+        <div className="container mx-auto px-6">
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
+              <div style={{ aspectRatio: '1', background: '#f6f5f4', borderRadius: 12, animation: 'pulse 1.8s infinite' }} />
+              <div className="space-y-4" style={{ paddingTop: 8 }}>
+                <div style={{ height: 32, background: '#f6f5f4', borderRadius: 6, animation: 'pulse 1.8s infinite' }} />
+                <div style={{ height: 16, width: 120, background: '#f6f5f4', borderRadius: 4, animation: 'pulse 1.8s infinite' }} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -63,106 +82,262 @@ export default function ArtworkDetail() {
 
   if (!artwork) {
     return (
-      <div className="pt-24 pb-20 px-6 max-w-4xl mx-auto text-center">
-        <p className="text-smoke">作品不存在或已被删除</p>
-        <Link to="/" className="mt-4 inline-block text-sm text-vermilion hover:underline">返回商店</Link>
+      <div style={{ paddingTop: 120, textAlign: 'center' }}>
+        <p style={{ fontSize: 15, color: '#615d59', marginBottom: 12 }}>Artwork not found</p>
+        <Link to="/" className="text-link">← Back to shop</Link>
       </div>
     )
   }
 
   const image = artwork.mockup_url || artwork.original_image_url
-
-  const handleBuy = async () => {
-    setBuying(true)
-    setPaymentError('')
-    try {
-      const data = await api.createCheckoutSession(artwork!.id, selectedProduct.printifyId)
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch (err: unknown) {
-      setPaymentError(err instanceof Error ? err.message : 'Checkout failed. Please try again.')
-    } finally {
-      setBuying(false)
-    }
-  }
+  const artistDisplay = artwork.artist_name || artwork.username || 'Anonymous'
 
   return (
-    <div className="pt-24 pb-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Back */}
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-smoke hover:text-ink mb-6">
-          <ArrowLeft size={14} /> 返回商店
+    <div style={{ paddingTop: 88, paddingBottom: 80 }}>
+      <div className="container mx-auto px-6">
+        {/* Breadcrumb */}
+        <Link
+          to="/"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 14,
+            color: '#615d59',
+            marginBottom: 32,
+            transition: 'color 0.15s',
+          }}
+          className="hover:text-[rgba(0,0,0,0.9)]"
+        >
+          <ArrowLeft size={14} />
+          Back to shop
         </Link>
 
-        <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: 64,
+            maxWidth: 1000,
+          }}
+        >
           {/* Image */}
           <div>
-            <div className="rounded-2xl overflow-hidden bg-warm-gray">
+            <div
+              style={{
+                background: '#f6f5f4',
+                borderRadius: 16,
+                overflow: 'hidden',
+                border: '1px solid rgba(0,0,0,0.08)',
+              }}
+            >
               {image ? (
-                <img src={image} alt={artwork.title} className="w-full aspect-square object-cover" />
+                <img
+                  src={image}
+                  alt={artwork.title}
+                  style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
+                />
               ) : (
-                <div className="w-full aspect-square flex items-center justify-center text-smoke/30">No image</div>
+                <div
+                  style={{
+                    width: '100%',
+                    aspectRatio: '1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#a39e98',
+                    fontSize: 14,
+                  }}
+                >
+                  No image
+                </div>
               )}
             </div>
-            <div className="mt-4 flex items-center gap-4 text-sm text-smoke">
-              <span className="flex items-center gap-1"><Eye size={14} />{artwork.view_count || 0} views</span>
+
+            {/* View count */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                marginTop: 14,
+                color: '#a39e98',
+                fontSize: 13,
+              }}
+            >
+              <Eye size={13} />
+              {artwork.view_count || 0} views
             </div>
           </div>
 
           {/* Info */}
-          <div>
-            <h1 className="text-3xl font-semibold text-ink mb-2">{artwork.title}</h1>
-            <p className="text-sm text-smoke mb-6">
-              by <Link to={`/artist/${artwork.username}`} className="text-vermilion hover:underline">{artwork.artist_name || artwork.username}</Link>
+          <div style={{ paddingTop: 4 }}>
+            {/* Title */}
+            <h1
+              style={{
+                fontSize: 32,
+                fontWeight: 700,
+                letterSpacing: '-0.75px',
+                color: 'rgba(0,0,0,0.95)',
+                lineHeight: 1.15,
+                marginBottom: 8,
+              }}
+            >
+              {artwork.title}
+            </h1>
+
+            {/* Artist */}
+            <p style={{ fontSize: 15, color: '#615d59', marginBottom: 28 }}>
+              by{' '}
+              <span style={{ color: '#0075de', fontWeight: 500 }}>{artistDisplay}</span>
             </p>
 
-            <p className="text-3xl font-semibold text-ink mb-6">${selectedProduct.price}</p>
+            {/* Price */}
+            <p
+              style={{
+                fontSize: 28,
+                fontWeight: 700,
+                letterSpacing: '-0.5px',
+                color: 'rgba(0,0,0,0.95)',
+                marginBottom: 24,
+              }}
+            >
+              ${selectedProduct.price}
+            </p>
 
+            {/* Description */}
             {artwork.description && (
-              <p className="text-sm text-smoke leading-relaxed mb-6">{artwork.description}</p>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: '#615d59',
+                  lineHeight: 1.65,
+                  marginBottom: 28,
+                }}
+              >
+                {artwork.description}
+              </p>
             )}
 
             {/* Product selector */}
-            <div className="mb-6">
-              <p className="text-xs text-smoke mb-2">选择产品</p>
-              <div className="grid grid-cols-2 gap-2">
-                {PRODUCTS.map(p => (
+            <div style={{ marginBottom: 28 }}>
+              <p
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'rgba(0,0,0,0.9)',
+                  marginBottom: 10,
+                  letterSpacing: '-0.05px',
+                }}
+              >
+                Choose product
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {PRODUCTS.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      selectedProduct.id === p.id
-                        ? 'border-vermilion bg-vermilion/5'
-                        : 'border-light-ink hover:border-smoke'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      border: selectedProduct.id === p.id
+                        ? '2px solid #0075de'
+                        : '1px solid rgba(0,0,0,0.12)',
+                      background: selectedProduct.id === p.id ? '#f2f9ff' : '#ffffff',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.12s',
+                    }}
                   >
-                    <p className="text-sm font-medium text-ink">{p.label}</p>
-                    <p className="text-xs text-smoke">${p.price}</p>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: selectedProduct.id === p.id ? 600 : 500,
+                        color: selectedProduct.id === p.id ? '#0075de' : 'rgba(0,0,0,0.9)',
+                      }}
+                    >
+                      {p.label}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: selectedProduct.id === p.id ? '#0075de' : 'rgba(0,0,0,0.65)',
+                      }}
+                    >
+                      ${p.price}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Buy CTA */}
+            {/* Buy button */}
             <button
               onClick={handleBuy}
               disabled={buying}
-              className="w-full py-4 bg-ink text-paper font-medium rounded-xl hover:bg-ink/80 flex items-center justify-center gap-2 mb-3 disabled:opacity-70"
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                fontSize: 15,
+                justifyContent: 'center',
+                marginBottom: 12,
+              }}
             >
-              {buying ? <Loader2 size={18} className="animate-spin" /> : <ShoppingBag size={18} />}
-              {buying ? 'Redirecting...' : `Buy Now — $${selectedProduct.price}`}
+              {buying ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Redirecting...
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={16} />
+                  Buy Now — ${selectedProduct.price}
+                </>
+              )}
             </button>
-            {paymentError && <p className="text-xs text-red-500 text-center mb-2">{paymentError}</p>}
-            <p className="text-xs text-smoke text-center">
-              Secure checkout via Stripe · Ships worldwide · 7-14 business days
+
+            {paymentError && (
+              <p style={{ fontSize: 13, color: '#eb5757', textAlign: 'center', marginBottom: 8 }}>
+                {paymentError}
+              </p>
+            )}
+
+            <p
+              style={{
+                fontSize: 13,
+                color: '#a39e98',
+                textAlign: 'center',
+                lineHeight: 1.5,
+              }}
+            >
+              Secure checkout via Stripe · Worldwide shipping 7–14 days
             </p>
 
             {/* Tags */}
             {artwork.tags?.length > 0 && (
-              <div className="mt-6 flex flex-wrap gap-2">
-                {(artwork.tags as string[]).map(tag => (
-                  <span key={tag} className="text-xs bg-warm-gray px-2.5 py-1 rounded-full text-smoke">#{tag}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                  marginTop: 28,
+                  paddingTop: 24,
+                  borderTop: '1px solid rgba(0,0,0,0.07)',
+                }}
+              >
+                {(artwork.tags as string[]).map((tag) => (
+                  <span
+                    key={tag}
+                    className="badge badge-gray"
+                    style={{ fontSize: 12 }}
+                  >
+                    {tag}
+                  </span>
                 ))}
               </div>
             )}

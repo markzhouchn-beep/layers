@@ -1,101 +1,117 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import LangSwitcher from './LangSwitcher'
 
-const categories = [
-  { name: 'T-Shirt', label: 'T-Shirt' },
-  { name: 'Poster', label: 'Poster' },
-  { name: 'Canvas', label: 'Canvas Print' },
-  { name: 'Mug', label: 'Mug' },
-  { name: 'Bag', label: 'Tote Bag' },
-]
-
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
+    const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [location])
+  useEffect(() => { setMenuOpen(false) }, [location])
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-paper/95 backdrop-blur-sm border-b border-light-ink shadow-sm' : 'bg-transparent'
-      }`}
-    >
-      <nav className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect x="2" y="2" width="10" height="10" fill="#1a1a1a" />
-            <rect x="16" y="2" width="10" height="10" fill="#c9382a" />
-            <rect x="2" y="16" width="10" height="10" fill="#e8e7e3" />
-            <rect x="16" y="16" width="10" height="10" fill="#1a1a1a" />
-          </svg>
-          <span className="text-lg font-semibold tracking-tight text-ink">Layers</span>
-        </Link>
-
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium text-ink hover:text-vermilion transition-colors">
-            Shop
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+          scrolled
+            ? 'bg-white border-b border-[rgba(0,0,0,0.08)] shadow-sm'
+            : 'bg-white'
+        }`}
+      >
+        <div className="container mx-auto px-6 h-[60px] flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+              <rect x="1" y="1" width="10" height="10" fill="rgba(0,0,0,0.9)" />
+              <rect x="15" y="1" width="10" height="10" fill="#0075de" />
+              <rect x="1" y="15" width="10" height="10" fill="rgba(0,0,0,0.08)" />
+              <rect x="15" y="15" width="10" height="10" fill="rgba(0,0,0,0.9)" />
+            </svg>
+            <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.3px', color: 'rgba(0,0,0,0.95)' }}>
+              Layers
+            </span>
           </Link>
-          <div className="relative group">
-            <button className="flex items-center gap-1 text-sm font-medium text-ink hover:text-vermilion transition-colors">
-              Products <ChevronDown size={14} />
-            </button>
-            <div className="absolute top-full left-0 mt-2 bg-paper border border-light-ink rounded-xl shadow-lg py-2 min-w-[140px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-              {categories.map((c) => (
-                <Link key={c.name} to="/" className="block px-4 py-2 text-sm text-smoke hover:text-ink hover:bg-warm-gray transition-colors">
-                  {c.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <Link to="/join" className="text-sm font-medium text-ink hover:text-vermilion transition-colors">
-            For Artists
-          </Link>
-        </div>
 
-        {/* Right */}
-        <div className="hidden md:flex items-center gap-4">
-          <LangSwitcher />
-          <Link to="/creator" className="text-sm text-smoke hover:text-ink transition-colors">Creator</Link>
-          <Link to="/admin" className="text-sm text-smoke hover:text-ink transition-colors">Admin</Link>
-          <Link to="/join" className="px-5 py-2 bg-ink text-paper text-sm font-medium rounded-lg hover:bg-ink/80 transition-colors">
-            Start Creating
-          </Link>
-        </div>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-7">
+            <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
+              Shop
+            </Link>
+            <Link to="/?category=tshirt" className="nav-link">
+              T-Shirts
+            </Link>
+            <Link to="/?category=poster" className="nav-link">
+              Posters
+            </Link>
+            <Link to="/?category=canvas" className="nav-link">
+              Canvas
+            </Link>
+            <Link to="/join" className="nav-link">
+              For Artists
+            </Link>
+          </nav>
 
-        {/* Mobile */}
-        <button className="md:hidden p-2 text-ink" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-      </nav>
-
-      {menuOpen && (
-        <div className="md:hidden bg-paper border-t border-light-ink">
-          <div className="px-6 py-4 flex flex-col gap-4">
+          {/* Right side */}
+          <div className="hidden md:flex items-center gap-5">
             <LangSwitcher />
-            <Link to="/" className="text-sm font-medium text-ink">Shop</Link>
-            <Link to="/join" className="text-sm font-medium text-ink">For Artists</Link>
-            <Link to="/creator" className="text-sm font-medium text-ink">Creator</Link>
-            <Link to="/admin" className="text-sm font-medium text-ink">Admin</Link>
-            <Link to="/join" className="px-5 py-2.5 bg-ink text-paper text-sm font-medium rounded-lg text-center">
+            <Link to="/creator" className="nav-link text-sm">
+              Creator
+            </Link>
+            <Link to="/admin" className="nav-link text-sm">
+              Admin
+            </Link>
+            <Link
+              to="/join"
+              className="btn-primary"
+              style={{ padding: '6px 14px', fontSize: 14 }}
+            >
               Start Creating
             </Link>
           </div>
+
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden p-1.5 rounded-md hover:bg-[rgba(0,0,0,0.05)] transition-colors"
+            onClick={() => setMenuOpen(v => !v)}
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="fixed inset-0 top-[60px] bg-white z-40 md:hidden">
+          <nav className="container mx-auto px-6 py-6 flex flex-col gap-1">
+            <Link to="/" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.9)] border-b border-[rgba(0,0,0,0.06)]">
+              Shop
+            </Link>
+            <Link to="/?category=tshirt" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.75)] border-b border-[rgba(0,0,0,0.06)]">
+              T-Shirts
+            </Link>
+            <Link to="/?category=poster" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.75)] border-b border-[rgba(0,0,0,0.06)]">
+              Posters
+            </Link>
+            <Link to="/?category=canvas" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.75)] border-b border-[rgba(0,0,0,0.06)]">
+              Canvas
+            </Link>
+            <Link to="/join" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.9)] border-b border-[rgba(0,0,0,0.06)]">
+              For Artists
+            </Link>
+            <div className="pt-4 flex flex-col gap-3">
+              <Link to="/creator" className="btn-secondary justify-center">Creator Login</Link>
+              <Link to="/join" className="btn-primary justify-center">Start Creating</Link>
+            </div>
+          </nav>
         </div>
       )}
-    </header>
+    </>
   )
 }

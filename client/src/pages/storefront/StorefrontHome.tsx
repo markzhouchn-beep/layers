@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Shirt, Frame, Coffee, ShoppingBag, Smartphone } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import ArtworkCard from '../../components/ArtworkCard'
 import api from '../../services/api'
 
@@ -9,7 +9,6 @@ interface Artwork {
   title: string
   artist_name: string
   username: string
-  avatar: string
   mockup_url: string
   original_image_url: string
   tags: string[]
@@ -18,12 +17,11 @@ interface Artwork {
 }
 
 const categories = [
-  { name: 'T-Shirt', label: 'T-Shirt', icon: Shirt, count: 128 },
-  { name: 'Poster', label: 'Poster', icon: Frame, count: 96 },
-  { name: 'Canvas', label: 'Canvas Print', icon: Frame, count: 84 },
-  { name: 'Mug', label: 'Mug', icon: Coffee, count: 62 },
-  { name: 'Bag', label: 'Tote Bag', icon: ShoppingBag, count: 54 },
-  { name: 'Phone', label: 'Phone Case', icon: Smartphone, count: 78 },
+  { label: 'T-Shirts', href: '/?category=tshirt', count: 128 },
+  { label: 'Posters', href: '/?category=poster', count: 96 },
+  { label: 'Canvas', href: '/?category=canvas', count: 84 },
+  { label: 'Mugs', href: '/?category=mug', count: 62 },
+  { label: 'Tote Bags', href: '/?category=tote', count: 54 },
 ]
 
 export default function StorefrontHome() {
@@ -32,99 +30,222 @@ export default function StorefrontHome() {
 
   useEffect(() => {
     api.getArtworks({ limit: 20 })
-      .then(({ items }: { items: Artwork[] }) => setArtworks(items.filter(a => a.mockup_url || a.original_image_url)))
+      .then(({ items }: { items: Artwork[] }) => setArtworks(items))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
   return (
     <div className="flex flex-col">
-      {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1600&q=80"
-            alt=""
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-ink/60" />
-        </div>
 
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-          <p className="text-paper/50 text-xs uppercase tracking-[0.3em] mb-6">
-            Original Chinese Art · Worldwide Delivery
-          </p>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold text-paper leading-tight mb-6">
-            Art That Travels<br />
-            <span className="text-paper/80">the Globe</span>
-          </h1>
-          <p className="text-paper/60 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Exclusive designs from China's finest independent artists.<br />
-            Printed on-demand. Shipped worldwide from the US, EU or Australia.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#artworks" className="px-8 py-3.5 bg-paper text-ink font-medium rounded-lg hover:bg-paper/90 transition-colors inline-flex items-center justify-center gap-2">
-              Shop Now <ArrowRight size={18} />
-            </a>
-            <Link to="/join" className="px-8 py-3.5 bg-vermilion text-paper font-medium rounded-lg hover:bg-vermilion/90 transition-colors inline-flex items-center justify-center gap-2">
-              For Artists
-            </Link>
-          </div>
-        </div>
+      {/* ── Hero ── */}
+      <section
+        style={{
+          paddingTop: 100,
+          paddingBottom: 100,
+          background: '#ffffff',
+        }}
+      >
+        <div className="container mx-auto px-6">
+          <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
+            {/* Eyebrow */}
+            <p
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: '#0075de',
+                marginBottom: 20,
+              }}
+            >
+              Original Art · Global Print
+            </p>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-          <div className="w-5 h-8 border-2 border-paper/40 rounded-full flex justify-center pt-1.5">
-            <div className="w-1 h-2 bg-paper/60 rounded-full animate-bounce" />
+            {/* Headline */}
+            <h1
+              style={{
+                fontSize: 'clamp(40px, 6vw, 72px)',
+                fontWeight: 700,
+                lineHeight: 1.0,
+                letterSpacing: '-2.5px',
+                color: 'rgba(0,0,0,0.95)',
+                marginBottom: 24,
+              }}
+            >
+              Chinese Art,
+              <br />
+              World Audience.
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              style={{
+                fontSize: 20,
+                fontWeight: 400,
+                lineHeight: 1.55,
+                color: '#615d59',
+                maxWidth: 540,
+                margin: '0 auto 40px',
+                letterSpacing: '-0.2px',
+              }}
+            >
+              Independent Chinese artists selling original designs on premium print products.
+              Printed on-demand. Shipped worldwide from US, EU or Australia.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href="#artworks"
+                className="btn-primary"
+                style={{ padding: '12px 24px', fontSize: 15 }}
+              >
+                Browse Artworks
+                <ArrowRight size={16} />
+              </a>
+              <Link
+                to="/join"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '12px 24px',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: 'rgba(0,0,0,0.75)',
+                  background: 'rgba(0,0,0,0.05)',
+                  borderRadius: 4,
+                  transition: 'all 0.15s',
+                }}
+                className="hover:bg-[rgba(0,0,0,0.08)]"
+              >
+                I'm an Artist
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold text-ink mb-3">Shop by Product</h2>
-            <p className="text-smoke">6 product types · 500+ unique designs</p>
-          </div>
+      {/* ── Divider ── */}
+      <div style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }} />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* ── Categories ── */}
+      <section style={{ padding: '48px 0', background: '#f6f5f4' }}>
+        <div className="container mx-auto px-6">
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            <a
+              href="#artworks"
+              className="badge badge-gray"
+              style={{ fontSize: 13, padding: '6px 14px' }}
+            >
+              All
+            </a>
             {categories.map((cat) => (
-              <a key={cat.name} href="#artworks" className="group flex flex-col items-center p-5 bg-warm-gray rounded-2xl hover:bg-light-ink transition-colors text-center">
-                <div className="w-12 h-12 flex items-center justify-center mb-3 text-ink group-hover:text-vermilion transition-colors">
-                  <cat.icon size={26} strokeWidth={1.5} />
-                </div>
-                <p className="text-sm font-medium text-ink mb-0.5">{cat.label}</p>
-                <p className="text-xs text-smoke">{cat.count} designs</p>
+              <a
+                key={cat.label}
+                href={cat.href}
+                className="badge badge-gray"
+                style={{ fontSize: 13, padding: '6px 14px' }}
+              >
+                {cat.label}
+                <span
+                  style={{
+                    marginLeft: 6,
+                    opacity: 0.6,
+                    fontSize: 12,
+                  }}
+                >
+                  {cat.count}
+                </span>
               </a>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Featured Artworks */}
-      <section id="artworks" className="py-20 px-6 bg-warm-gray">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-end mb-10">
+      {/* ── Artwork Grid ── */}
+      <section id="artworks" style={{ padding: '64px 0 80px', background: '#ffffff' }}>
+        <div className="container mx-auto px-6">
+          {/* Section header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 32,
+            }}
+          >
             <div>
-              <p className="text-xs uppercase tracking-wider text-smoke mb-2">Featured</p>
-              <h2 className="text-2xl md:text-3xl font-semibold text-ink">Discover Unique Art</h2>
+              <h2
+                style={{
+                  fontSize: 26,
+                  fontWeight: 700,
+                  letterSpacing: '-0.4px',
+                  color: 'rgba(0,0,0,0.95)',
+                  lineHeight: 1.2,
+                }}
+              >
+                Featured Artworks
+              </h2>
+              <p style={{ fontSize: 14, color: '#615d59', marginTop: 4 }}>
+                {loading ? 'Loading...' : `${artworks.length} designs from independent artists`}
+              </p>
             </div>
-            <span className="hidden md:block text-sm text-smoke">{artworks.length} artworks</span>
           </div>
 
+          {/* Grid */}
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: 24,
+              }}
+            >
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-[3/4] bg-paper rounded-xl animate-pulse" />
+                <div
+                  key={i}
+                  style={{
+                    aspectRatio: '4/5',
+                    background: '#f6f5f4',
+                    borderRadius: 12,
+                    animation: 'pulse 1.8s ease-in-out infinite',
+                  }}
+                />
               ))}
             </div>
           ) : artworks.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-smoke text-sm mb-3">No artworks yet</p>
-              <Link to="/join" className="text-sm text-vermilion hover:underline">Be the first artist →</Link>
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '80px 0',
+                border: '1px dashed rgba(0,0,0,0.12)',
+                borderRadius: 12,
+              }}
+            >
+              <p style={{ fontSize: 15, color: '#615d59', marginBottom: 12 }}>
+                No artworks published yet.
+              </p>
+              <Link to="/join" className="text-link" style={{ fontSize: 14 }}>
+                Be the first artist →
+              </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: 24,
+              }}
+            >
               {artworks.map((artwork) => (
                 <ArtworkCard key={artwork.id} artwork={artwork} />
               ))}
@@ -133,41 +254,175 @@ export default function StorefrontHome() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-2xl md:text-3xl font-semibold text-ink mb-3">How It Works</h2>
+      {/* ── How it works — warm section ── */}
+      <section style={{ padding: '80px 0', background: '#f6f5f4' }}>
+        <div className="container mx-auto px-6">
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2
+              style={{
+                fontSize: 32,
+                fontWeight: 700,
+                letterSpacing: '-1px',
+                color: 'rgba(0,0,0,0.95)',
+              }}
+            >
+              How it works
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 1,
+              background: 'rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.08)',
+              borderRadius: 12,
+              overflow: 'hidden',
+            }}
+          >
             {[
-              { step: '01', title: 'Choose Your Design', desc: 'Browse thousands of original artworks from Chinese independent artists' },
-              { step: '02', title: 'Select Product', desc: 'T-Shirts, mugs, posters, canvas prints and more — all printed on-demand' },
-              { step: '03', title: 'Worldwide Delivery', desc: 'Printed in the US, EU or Australia. Ships within 7-14 business days' },
+              {
+                num: '01',
+                title: 'Choose a design',
+                desc: 'Browse original artworks from Chinese independent creators',
+              },
+              {
+                num: '02',
+                title: 'Pick your product',
+                desc: 'T-shirt, mug, poster, canvas — all printed on-demand',
+              },
+              {
+                num: '03',
+                title: 'Order securely',
+                desc: 'Stripe checkout. Printed locally and shipped worldwide',
+              },
             ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="text-5xl font-light text-light-ink mb-4">{item.step}</div>
-                <h3 className="text-base font-semibold text-ink mb-2">{item.title}</h3>
-                <p className="text-sm text-smoke leading-relaxed">{item.desc}</p>
+              <div
+                key={item.num}
+                style={{
+                  background: '#ffffff',
+                  padding: '36px 32px',
+                  textAlign: 'center',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 40,
+                    fontWeight: 700,
+                    letterSpacing: '-2px',
+                    color: 'rgba(0,0,0,0.08)',
+                    marginBottom: 12,
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.num}
+                </p>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: 'rgba(0,0,0,0.9)',
+                    marginBottom: 8,
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: '#615d59',
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {item.desc}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Artist CTA */}
-      <section className="py-24 px-6 bg-ink text-paper">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold mb-4">Are You a Chinese Artist?</h2>
-          <p className="text-paper/60 text-lg mb-8">
-            Join Layers and turn your original artwork into a global income stream. Subscribe in CNY, earn in USD.
-          </p>
-          <Link to="/join" className="inline-flex items-center gap-2 px-8 py-4 bg-vermilion text-paper font-medium rounded-lg hover:bg-vermilion/90 transition-colors">
-            Join as Artist <ArrowRight size={18} />
-          </Link>
-          <div className="mt-10 flex justify-center gap-8 text-sm text-paper/40">
-            <span>¥0 to start</span><span>·</span><span>15 min setup</span><span>·</span><span>Global audience</span>
+      {/* ── Artist CTA ── */}
+      <section
+        style={{
+          padding: '100px 0',
+          background: '#ffffff',
+          borderTop: '1px solid rgba(0,0,0,0.07)',
+        }}
+      >
+        <div className="container mx-auto px-6">
+          <div
+            style={{
+              maxWidth: 600,
+              margin: '0 auto',
+              textAlign: 'center',
+            }}
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: '#0075de',
+                marginBottom: 16,
+              }}
+            >
+              For Artists
+            </p>
+
+            <h2
+              style={{
+                fontSize: 'clamp(28px, 4vw, 44px)',
+                fontWeight: 700,
+                letterSpacing: '-1.5px',
+                color: 'rgba(0,0,0,0.95)',
+                lineHeight: 1.1,
+                marginBottom: 16,
+              }}
+            >
+              Turn your art into a global income stream
+            </h2>
+
+            <p
+              style={{
+                fontSize: 17,
+                color: '#615d59',
+                lineHeight: 1.6,
+                marginBottom: 32,
+              }}
+            >
+              Subscribe in CNY. Earn in USD. Layers handles printing, shipping,
+              and customer service — you focus on creating.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/join" className="btn-primary" style={{ padding: '12px 24px' }}>
+                Start for free
+                <ArrowRight size={16} />
+              </Link>
+              <Link to="/creator" className="btn-secondary" style={{ padding: '12px 24px' }}>
+                Creator Login
+              </Link>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: 16,
+                justifyContent: 'center',
+                marginTop: 28,
+                fontSize: 13,
+                color: '#a39e98',
+              }}
+            >
+              <span>¥0 to start</span>
+              <span>·</span>
+              <span>30%–45% royalty</span>
+              <span>·</span>
+              <span>Global reach</span>
+            </div>
           </div>
         </div>
       </section>
