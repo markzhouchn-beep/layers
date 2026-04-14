@@ -2,111 +2,75 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Canvas, FabricImage, FabricObject } from 'fabric'
 import { Upload, RotateCw, ZoomIn, ZoomOut, Download } from 'lucide-react'
 
-// Product templates - in production these would be real product mask images
+// Product templates mapped to Printify blueprint IDs
 const products = [
-  { id: 'tshirt', name: 'T-Shirt', width: 400, height: 450, printArea: { x: 100, y: 80, w: 200, h: 220 } },
-  { id: 'mug', name: 'Mug', width: 500, height: 300, printArea: { x: 175, y: 75, w: 150, h: 150 } },
-  { id: 'poster', name: 'Poster', width: 400, height: 560, printArea: { x: 50, y: 50, w: 300, h: 460 } },
-  { id: 'canvas', name: 'Canvas', width: 480, height: 480, printArea: { x: 40, y: 40, w: 400, h: 400 } },
-  { id: 'tote', name: 'Tote Bag', width: 420, height: 480, printArea: { x: 110, y: 120, w: 200, h: 240 } },
+  { id: 'tshirt', name: 'Classic T-Shirt', blueprintId: 5, width: 400, height: 450, printArea: { x: 100, y: 80, w: 200, h: 220 } },
+  { id: 'mug', name: 'Classic Mug', blueprintId: 10, width: 500, height: 300, printArea: { x: 175, y: 75, w: 150, h: 150 } },
+  { id: 'poster', name: 'Poster', blueprintId: 31, width: 400, height: 560, printArea: { x: 50, y: 50, w: 300, h: 460 } },
+  { id: 'canvas', name: 'Canvas Print', blueprintId: 34, width: 480, height: 480, printArea: { x: 40, y: 40, w: 400, h: 400 } },
+  { id: 'tote', name: 'Tote Bag', blueprintId: 21, width: 420, height: 480, printArea: { x: 110, y: 120, w: 200, h: 240 } },
 ]
+
+export interface MockupData {
+  dataUrl: string
+  blueprintId: number
+  productName: string
+}
 
 interface Props {
   artworkUrl?: string
-  onSave?: (dataUrl: string) => void
+  onSave?: (data: MockupData) => void
+  initialProductId?: string
 }
 
-export default function MockupGenerator({ artworkUrl, onSave }: Props) {
+export default function MockupGenerator({ artworkUrl, onSave, initialProductId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fabricRef = useRef<Canvas | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const [selectedProduct, setSelectedProduct] = useState(products[0])
+  const [selectedProduct, setSelectedProduct] = useState(products.find(p => p.id === initialProductId) || products[0])
   const [artwork, setArtwork] = useState<string | null>(artworkUrl || null)
   const [scale, setScale] = useState(1)
   const [rotation, setRotation] = useState(0)
 
-
-  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current || fabricRef.current) return
 
-    const product = selectedProduct
     const canvas = new Canvas(canvasRef.current, {
-      width: product.width,
-      height: product.height,
+      width: selectedProduct.width,
+      height: selectedProduct.height,
       backgroundColor: '#f5f4f0',
     })
-
     fabricRef.current = canvas
+    drawProduct(selectedProduct)
 
-    // Draw product shape
-    const drawProduct = () => {
-      const p = selectedProduct
-      canvas.clear()
-      canvas.backgroundColor = '#f5f4f0'
-
-      // Draw placeholder product outline
-      const rect = new FabricObject({
-        left: 0,
-        top: 0,
-        width: p.width,
-        height: p.height,
-        fill: '#e8e7e3',
-        stroke: '#d0cfc9',
-        strokeWidth: 1,
-        selectable: false,
-      })
-      canvas.add(rect)
-
-      // Print area indicator (dashed)
-      const printArea = new FabricObject({
-        left: p.printArea.x,
-        top: p.printArea.y,
-        width: p.printArea.w,
-        height: p.printArea.h,
-        fill: 'transparent',
-        stroke: '#c9382a',
-        strokeWidth: 1,
-        strokeDashArray: [5, 3],
-        selectable: false,
-      })
-      canvas.add(printArea)
-
-      if (artwork) {
-        addArtworkToCanvas(artwork)
-      }
-    }
-
-    drawProduct()
-
-    return () => {
-      canvas.dispose()
-      fabricRef.current = null
-    }
+    return () => { canvas.dispose(); fabricRef.current = null }
   }, [])
 
-  // Re-init canvas on product change
   useEffect(() => {
-    if (!canvasRef.current) return
-    if (fabricRef.current) {
-      fabricRef.current.dispose()
-      fabricRef.current = null
-    }
-
-    const product = selectedProduct
+    if (!canvasRef.current || !fabricRef.current) return
+    fabricRef.current.dispose()
+    fabricRef.current = null
     const canvas = new Canvas(canvasRef.current, {
-      width: product.width,
-      height: product.height,
+      width: selectedProduct.width,
+      height: selectedProduct.height,
       backgroundColor: '#f5f4f0',
     })
     fabricRef.current = canvas
+    drawProduct(selectedProduct)
+  }, [selectedProduct])
 
-    const rect = new FabricObject({
+  const drawProduct = (product: typeof products[0]) => {
+    const canvas = fabricRef.current
+    if (!canvas) return
+    canvas.clear()
+    canvas.backgroundColor = '#f5f4f0'
+
+    const body = new FabricObject({
       left: 0, top: 0, width: product.width, height: product.height,
       fill: '#e8e7e3', stroke: '#d0cfc9', strokeWidth: 1, selectable: false,
     })
-    canvas.add(rect)
+    canvas.add(body)
 
     const printArea = new FabricObject({
       left: product.printArea.x, top: product.printArea.y,
@@ -116,24 +80,21 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
     })
     canvas.add(printArea)
 
-    if (artwork) addArtworkToCanvas(artwork)
-  }, [selectedProduct])
+    if (artwork) addArtworkToCanvas(artwork, product)
+  }
 
-  const addArtworkToCanvas = useCallback((url: string) => {
+  const addArtworkToCanvas = useCallback((url: string, product = selectedProduct) => {
     const canvas = fabricRef.current
     if (!canvas) return
-    const p = selectedProduct
-
     FabricImage.fromURL(url, { crossOrigin: 'anonymous' }).then((img) => {
-      const maxW = p.printArea.w * 0.9
-      const maxH = p.printArea.h * 0.9
+      const maxW = product.printArea.w * 0.9
+      const maxH = product.printArea.h * 0.9
       const scaleToFit = Math.min(maxW / img.width!, maxH / img.height!)
       img.scale(scaleToFit)
       img.set({
-        left: p.printArea.x + p.printArea.w / 2,
-        top: p.printArea.y + p.printArea.h / 2,
-        originX: 'center',
-        originY: 'center',
+        left: product.printArea.x + product.printArea.w / 2,
+        top: product.printArea.y + product.printArea.h / 2,
+        originX: 'center', originY: 'center',
       })
       canvas.add(img)
       canvas.setActiveObject(img)
@@ -141,6 +102,7 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
         setScale(img.scaleX || 1)
         setRotation(img.angle || 0)
       })
+      setScale(scaleToFit)
       canvas.renderAll()
     }).catch(console.error)
   }, [selectedProduct])
@@ -153,11 +115,10 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
       const url = ev.target?.result as string
       setArtwork(url)
       const canvas = fabricRef.current
-      if (canvas) {
-        const objs = canvas.getObjects().filter(o => o !== canvas.getObjects()[0] && o !== canvas.getObjects()[1])
-        objs.forEach(o => canvas.remove(o))
-        addArtworkToCanvas(url)
-      }
+      if (!canvas) return
+      const objs = canvas.getObjects()
+      objs.slice(2).forEach(o => canvas.remove(o))
+      addArtworkToCanvas(url)
     }
     reader.readAsDataURL(file)
   }
@@ -168,7 +129,7 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
     const obj = canvas.getActiveObject()
     if (!obj) return
     obj.rotate((obj.angle || 0) + deg)
-    setRotation(obj.angle)
+    setRotation(obj.angle || 0)
     canvas.renderAll()
   }
 
@@ -183,33 +144,32 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
     canvas.renderAll()
   }
 
-  const exportImage = () => {
-    const canvas = fabricRef.current
-    if (!canvas) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dataUrl = (canvas as any).toDataURL('image/png')
-    onSave?.(dataUrl)
-    // Download
-    const a = document.createElement('a')
-    a.href = dataUrl
-    a.download = `mockup-${selectedProduct.id}.png`
-    a.click()
-  }
-
   const fitToContainer = () => {
     const canvas = fabricRef.current
     if (!canvas) return
     const obj = canvas.getActiveObject()
     if (!obj) return
     const p = selectedProduct
-    const maxW = p.printArea.w * 0.9
-    const maxH = p.printArea.h * 0.9
-    const scaleToFit = Math.min(maxW / (obj.width! * obj.scaleX!), maxH / (obj.height! * obj.scaleY!))
-    obj.scale(scaleToFit)
+    const newScale = Math.min((p.printArea.w * 0.9) / (obj.width! * obj.scaleX!), (p.printArea.h * 0.9) / (obj.height! * obj.scaleY!))
+    obj.scale(newScale)
     obj.set({ left: p.printArea.x + p.printArea.w / 2, top: p.printArea.y + p.printArea.h / 2, originX: 'center', originY: 'center' })
     obj.setCoords()
-    setScale(scaleToFit)
+    setScale(newScale)
     canvas.renderAll()
+  }
+
+  const exportImage = () => {
+    const canvas = fabricRef.current
+    if (!canvas) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dataUrl = (canvas as any).toDataURL('image/png')
+    onSave?.({ dataUrl, blueprintId: selectedProduct.blueprintId, productName: selectedProduct.name })
+
+    // Download
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = `mockup-${selectedProduct.id}.png`
+    a.click()
   }
 
   return (
@@ -234,31 +194,24 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
         </div>
       </div>
 
-      {/* Canvas area */}
+      {/* Canvas */}
       <div className="flex flex-col items-center gap-4">
-        <div
-          ref={containerRef}
-          className="overflow-auto max-w-full bg-warm-gray rounded-xl p-4"
-          style={{ maxHeight: '400px' }}
-        >
+        <div ref={containerRef} className="overflow-auto max-w-full bg-warm-gray rounded-xl p-4" style={{ maxHeight: '400px' }}>
           <canvas ref={canvasRef} />
         </div>
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-3 justify-center">
-          {/* Upload */}
           <label className="flex items-center gap-1.5 px-4 py-2 bg-warm-gray border border-light-ink rounded-lg text-xs font-medium text-smoke hover:bg-light-ink cursor-pointer">
             <Upload size={14} />
             <span>上传作品</span>
             <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
           </label>
 
-          {/* Fit */}
           <button onClick={fitToContainer} className="flex items-center gap-1.5 px-4 py-2 bg-warm-gray border border-light-ink rounded-lg text-xs font-medium text-smoke hover:bg-light-ink">
             <ZoomIn size={14} /> 适应框
           </button>
 
-          {/* Scale */}
           <button onClick={() => handleScale(-0.1)} className="w-8 h-8 flex items-center justify-center bg-warm-gray border border-light-ink rounded-lg text-smoke hover:bg-light-ink">
             <ZoomOut size={14} />
           </button>
@@ -267,7 +220,6 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
             <ZoomIn size={14} />
           </button>
 
-          {/* Rotate */}
           <button onClick={() => handleRotate(-15)} className="w-8 h-8 flex items-center justify-center bg-warm-gray border border-light-ink rounded-lg text-smoke hover:bg-light-ink">
             <RotateCw size={14} style={{ transform: 'scaleX(-1)' }} />
           </button>
@@ -276,13 +228,11 @@ export default function MockupGenerator({ artworkUrl, onSave }: Props) {
             <RotateCw size={14} />
           </button>
 
-          {/* Export */}
           <button onClick={exportImage} className="flex items-center gap-1.5 px-4 py-2 bg-vermilion text-paper rounded-lg text-xs font-medium hover:bg-vermilion/90">
-            <Download size={14} /> 导出 PNG
+            <Download size={14} /> 保存并导出
           </button>
         </div>
 
-        {/* Scale info */}
         <p className="text-xs text-smoke">
           红色虚线内为印刷区域 · 导出分辨率: {selectedProduct.width}x{selectedProduct.height}px
         </p>

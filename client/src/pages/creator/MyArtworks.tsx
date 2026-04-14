@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Clock, Check, X } from 'lucide-react'
+import MockupGenerator from '../../components/MockupGenerator'
 import api from '../../services/api'
 
 interface Artwork {
@@ -20,7 +21,9 @@ export default function MyArtworks() {
   const [tab, setTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [showUpload, setShowUpload] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [form, setForm] = useState({ title: '', description: '', image_url: '' })
+  const [step, setStep] = useState<'info' | 'design'>('info')
+  const [form, setForm] = useState({ title: '', description: '' })
+  const [mockupData, setMockupData] = useState<{ dataUrl: string; blueprintId: number; productName: string } | null>(null)
   const [error, setError] = useState('')
 
   const load = () => {
@@ -35,17 +38,27 @@ export default function MyArtworks() {
 
   const filtered = artworks.filter(a => tab === 'all' ? true : a.status === tab)
 
-  const handleUpload = async () => {
-    if (!form.title.trim() || !form.image_url.trim()) {
-      setError('标题和图片URL不能为空')
-      return
-    }
+  const handleMockupSave = (data: { dataUrl: string; blueprintId: number; productName: string }) => {
+    setMockupData(data)
+    setStep('design')
+  }
+
+  const handleSubmit = async () => {
+    if (!form.title.trim()) { setError('请填写作品标题'); return }
+    if (!mockupData) { setError('请先设计并导出预览图'); return }
     setError('')
     setUploading(true)
     try {
-      await api.createArtwork({ title: form.title, description: form.description, original_image_url: form.image_url })
+      await api.createArtwork({
+        title: form.title,
+        description: form.description,
+        original_image_url: mockupData.dataUrl,
+        tags: [],
+      })
       setShowUpload(false)
-      setForm({ title: '', description: '', image_url: '' })
+      setStep('info')
+      setForm({ title: '', description: '' })
+      setMockupData(null)
       load()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '上传失败')
@@ -55,7 +68,7 @@ export default function MyArtworks() {
   }
 
   const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-    pending: { label: '待审核', color: 'text-smoke bg-warm-gray', icon: Clock },
+    pending:  { label: '待审核', color: 'text-smoke bg-warm-gray', icon: Clock },
     approved: { label: '已通过', color: 'text-bamboo bg-bamboo/10', icon: Check },
     rejected: { label: '已拒绝', color: 'text-red-500 bg-red-50', icon: X },
   }
@@ -64,7 +77,8 @@ export default function MyArtworks() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">我的作品</h1>
-        <button onClick={() => setShowUpload(true)} className="flex items-center gap-1.5 px-4 py-2 bg-vermilion text-paper text-sm rounded-lg hover:bg-vermilion/90">
+        <button onClick={() => { setShowUpload(true); setStep('info'); setMockupData(null); setError('') }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-vermilion text-paper text-sm rounded-lg hover:bg-vermilion/90">
           <Plus size={14} /> 上传作品
         </button>
       </div>
@@ -72,8 +86,12 @@ export default function MyArtworks() {
       {/* Tabs */}
       <div className="flex gap-1 bg-warm-gray p-1 rounded-lg w-fit">
         {(['all', 'pending', 'approved', 'rejected'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 text-xs rounded-md transition-colors ${tab === t ? 'bg-paper text-ink shadow-sm' : 'text-smoke hover:text-ink'}`}>
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${tab === t ? 'bg-paper text-ink shadow-sm' : 'text-smoke hover:text-ink'}`}>
             {t === 'all' ? '全部' : t === 'pending' ? '待审核' : t === 'approved' ? '已通过' : '已拒绝'}
+            {t === 'pending' && artworks.some(a => a.status === 'pending') && (
+              <span className="ml-1 text-vermilion">({artworks.filter(a => a.status === 'pending').length})</span>
+            )}
           </button>
         ))}
       </div>
@@ -81,25 +99,58 @@ export default function MyArtworks() {
       {/* Upload modal */}
       {showUpload && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-paper rounded-2xl p-6 w-full max-w-sm space-y-4">
-            <h2 className="text-lg font-semibold text-ink">上传作品</h2>
+          <div className="bg-paper rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-ink">
+                {step === 'info' ? '上传作品' : '设计预览图'}
+              </h2>
+              <button onClick={() => { setShowUpload(false); setStep('info'); setMockupData(null) }}
+                className="text-smoke hover:text-ink">✕</button>
+            </div>
+
             {error && <p className="text-xs text-red-500 bg-red-50 p-2 rounded">{error}</p>}
-            <div>
-              <p className="text-xs text-smoke mb-1">作品标题</p>
-              <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="如：山水系列" className="w-full px-3 py-2.5 bg-warm-gray border border-light-ink rounded-lg text-sm focus:outline-none focus:border-vermilion" />
-            </div>
-            <div>
-              <p className="text-xs text-smoke mb-1">图片URL</p>
-              <input value={form.image_url} onChange={e => setForm({...form, image_url: e.target.value})} placeholder="https://..." className="w-full px-3 py-2.5 bg-warm-gray border border-light-ink rounded-lg text-sm focus:outline-none focus:border-vermilion" />
-            </div>
-            <div>
-              <p className="text-xs text-smoke mb-1">描述（选填）</p>
-              <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="描述你的作品..." rows={3} className="w-full px-3 py-2.5 bg-warm-gray border border-light-ink rounded-lg text-sm resize-none focus:outline-none focus:border-vermilion" />
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowUpload(false)} className="flex-1 py-2.5 border border-light-ink text-sm text-smoke rounded-lg">取消</button>
-              <button onClick={handleUpload} disabled={uploading} className="flex-1 py-2.5 bg-ink text-paper text-sm rounded-lg disabled:opacity-60">{uploading ? '上传中...' : '确认'}</button>
-            </div>
+
+            {step === 'info' ? (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-smoke mb-1">作品标题 *</p>
+                  <input value={form.title} onChange={e => setForm({...form, title: e.target.value})}
+                    placeholder="如：山水之间" className="w-full px-3 py-2.5 bg-warm-gray border border-light-ink rounded-lg text-sm focus:outline-none focus:border-vermilion" />
+                </div>
+                <div>
+                  <p className="text-xs text-smoke mb-1">描述（选填）</p>
+                  <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})}
+                    placeholder="描述你的作品..." rows={3}
+                    className="w-full px-3 py-2.5 bg-warm-gray border border-light-ink rounded-lg text-sm resize-none focus:outline-none focus:border-vermilion" />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setShowUpload(false)} className="flex-1 py-2.5 border border-light-ink text-sm text-smoke rounded-lg">取消</button>
+                  <button onClick={() => { if (!form.title.trim()) setError('请填写标题'); else setStep('design') }}
+                    className="flex-1 py-2.5 bg-ink text-paper text-sm rounded-lg">下一步：设计 →</button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {mockupData && (
+                  <div className="text-xs text-smoke bg-bamboo/10 p-2 rounded flex items-center gap-2">
+                    <Check size={12} className="text-bamboo" />
+                    预览图已保存 · 产品：{mockupData.productName} · 可以修改或直接提交
+                  </div>
+                )}
+                <MockupGenerator
+                  artworkUrl={mockupData?.dataUrl}
+                  onSave={handleMockupSave}
+                  initialProductId="tshirt"
+                />
+                <div className="flex gap-2 pt-2 border-t border-light-ink">
+                  <button onClick={() => setStep('info')} className="flex-1 py-2.5 border border-light-ink text-sm text-smoke rounded-lg">← 上一步</button>
+                  <button onClick={handleSubmit} disabled={uploading || !mockupData}
+                    className="flex-1 py-2.5 bg-vermilion text-paper text-sm rounded-lg disabled:opacity-60 disabled:cursor-not-allowed">
+                    {uploading ? '提交中...' : '确认发布作品'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -107,9 +158,7 @@ export default function MyArtworks() {
       {/* Grid */}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="aspect-square bg-warm-gray rounded-xl animate-pulse" />
-          ))}
+          {[...Array(6)].map((_, i) => <div key={i} className="aspect-square bg-warm-gray rounded-xl animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -120,11 +169,12 @@ export default function MyArtworks() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {filtered.map(artwork => {
             const s = statusConfig[artwork.status] || statusConfig.pending
+            const img = artwork.mockup_url || artwork.original_image_url
             return (
               <div key={artwork.id} className="bg-warm-gray rounded-xl overflow-hidden group">
                 <div className="aspect-square bg-light-ink/20 relative">
-                  {artwork.mockup_url || artwork.original_image_url ? (
-                    <img src={artwork.mockup_url || artwork.original_image_url} alt={artwork.title} className="w-full h-full object-cover" />
+                  {img ? (
+                    <img src={img} alt={artwork.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-smoke/40">无图片</div>
                   )}

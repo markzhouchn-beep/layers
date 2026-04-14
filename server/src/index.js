@@ -22,6 +22,8 @@ import adminRoutes from './routes/admin.js'
 import externalRoutes from './routes/external-platforms.js'
 import printifyRoutes from './routes/printify.js'
 import printifySyncRoutes from './routes/printify-sync.js'
+import uploadRoutes from './routes/uploads.js'
+import stripeRoutes from './routes/stripe.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -42,6 +44,8 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/external-platforms', externalRoutes)
 app.use('/api/printify', printifyRoutes)
 app.use('/api/printify-sync', printifySyncRoutes)
+app.use('/api/uploads', uploadRoutes)
+app.use('/api/checkout', stripeRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

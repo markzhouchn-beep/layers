@@ -73,6 +73,12 @@ export const api = {
 
   // External platforms
   getPlatforms: () => request('GET', '/external-platforms/platforms'),
+
+  // Checkout / Stripe
+  createCheckoutSession: (artworkId: number, blueprintId: number, quantity?: number) =>
+    request('POST', '/checkout/create-session', { artwork_id: artworkId, blueprint_id: blueprintId, quantity: quantity || 1 }),
+  getCheckoutSession: (sessionId: string) =>
+    request('GET', `/checkout/session/${sessionId}`),
 }
 
 export default api

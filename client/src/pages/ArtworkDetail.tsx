@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Eye, ShoppingBag, ArrowLeft } from 'lucide-react'
+import { Eye, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
 
 const PRODUCTS = [
-  { id: 5, label: 'Classic T-Shirt', price: 35 },
-  { id: 6, label: 'Premium T-Shirt', price: 42 },
-  { id: 10, label: 'Classic Mug', price: 22 },
-  { id: 31, label: 'Poster', price: 28 },
-  { id: 34, label: 'Canvas Print', price: 55 },
-  { id: 21, label: 'Tote Bag', price: 25 },
-  { id: 27, label: 'Phone Case', price: 30 },
+  { id: 5, label: 'Classic T-Shirt', price: 24.99, printifyId: 5 },
+  { id: 10, label: 'Classic Mug', price: 19.99, printifyId: 10 },
+  { id: 31, label: 'Poster', price: 39.99, printifyId: 31 },
+  { id: 34, label: 'Canvas Print', price: 59.99, printifyId: 34 },
+  { id: 21, label: 'Tote Bag', price: 29.99, printifyId: 21 },
 ]
 
 interface Artwork {
@@ -25,6 +23,7 @@ interface Artwork {
   artist_name: string
   username: string
   avatar: string
+  printify_blueprint_id?: number
 }
 
 export default function ArtworkDetail() {
@@ -32,11 +31,20 @@ export default function ArtworkDetail() {
   const [artwork, setArtwork] = useState<Artwork | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0])
+  const [buying, setBuying] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
 
   useEffect(() => {
     if (!id) return
     api.getArtwork(id)
-      .then(setArtwork)
+      .then((data: Artwork) => {
+        setArtwork(data)
+        // Auto-select matching product based on blueprint
+        if (data.printify_blueprint_id) {
+          const match = PRODUCTS.find(p => p.printifyId === data.printify_blueprint_id)
+          if (match) setSelectedProduct(match)
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
@@ -63,6 +71,21 @@ export default function ArtworkDetail() {
   }
 
   const image = artwork.mockup_url || artwork.original_image_url
+
+  const handleBuy = async () => {
+    setBuying(true)
+    setPaymentError('')
+    try {
+      const data = await api.createCheckoutSession(artwork!.id, selectedProduct.printifyId)
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err: unknown) {
+      setPaymentError(err instanceof Error ? err.message : 'Checkout failed. Please try again.')
+    } finally {
+      setBuying(false)
+    }
+  }
 
   return (
     <div className="pt-24 pb-20 px-6">
@@ -122,11 +145,17 @@ export default function ArtworkDetail() {
             </div>
 
             {/* Buy CTA */}
-            <button className="w-full py-4 bg-ink text-paper font-medium rounded-xl hover:bg-ink/80 flex items-center justify-center gap-2 mb-3">
-              <ShoppingBag size={18} /> Buy Now — ${selectedProduct.price}
+            <button
+              onClick={handleBuy}
+              disabled={buying}
+              className="w-full py-4 bg-ink text-paper font-medium rounded-xl hover:bg-ink/80 flex items-center justify-center gap-2 mb-3 disabled:opacity-70"
+            >
+              {buying ? <Loader2 size={18} className="animate-spin" /> : <ShoppingBag size={18} />}
+              {buying ? 'Redirecting...' : `Buy Now — $${selectedProduct.price}`}
             </button>
+            {paymentError && <p className="text-xs text-red-500 text-center mb-2">{paymentError}</p>}
             <p className="text-xs text-smoke text-center">
-              Ships worldwide from US/EU/Australia · 7-14 business days
+              Secure checkout via Stripe · Ships worldwide · 7-14 business days
             </p>
 
             {/* Tags */}
