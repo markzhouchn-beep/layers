@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import LangSwitcher from './LangSwitcher'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
+  const { isAuthenticated, user } = useAuth()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -15,6 +17,9 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => { setMenuOpen(false) }, [location])
+
+  // "For Artists" → logged in → /creator, not logged in → /join
+  const forArtistsTarget = (isAuthenticated && user?.role === 'creator') ? '/creator' : '/join'
 
   return (
     <>
@@ -53,7 +58,7 @@ export default function Navbar() {
             <Link to="/?category=canvas" className="nav-link">
               Canvas
             </Link>
-            <Link to="/join" className="nav-link">
+            <Link to={forArtistsTarget} className="nav-link">
               For Artists
             </Link>
           </nav>
@@ -61,18 +66,12 @@ export default function Navbar() {
           {/* Right side */}
           <div className="hidden md:flex items-center gap-5">
             <LangSwitcher />
-            <Link to="/creator" className="nav-link text-sm">
-              Creator
-            </Link>
-            <Link to="/admin" className="nav-link text-sm">
-              Admin
-            </Link>
             <Link
-              to="/join"
+              to={isAuthenticated ? '/creator' : '/join'}
               className="btn-primary"
               style={{ padding: '6px 14px', fontSize: 14 }}
             >
-              Start Creating
+              {isAuthenticated ? 'Creator Dashboard' : 'Start Creating'}
             </Link>
           </div>
 
@@ -102,11 +101,10 @@ export default function Navbar() {
             <Link to="/?category=canvas" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.75)] border-b border-[rgba(0,0,0,0.06)]">
               Canvas
             </Link>
-            <Link to="/join" className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.9)] border-b border-[rgba(0,0,0,0.06)]">
+            <Link to={forArtistsTarget} className="py-3 text-[15px] font-medium text-[rgba(0,0,0,0.9)] border-b border-[rgba(0,0,0,0.06)]">
               For Artists
             </Link>
             <div className="pt-4 flex flex-col gap-3">
-              <Link to="/creator" className="btn-secondary justify-center">Creator Login</Link>
               <Link to="/join" className="btn-primary justify-center">Start Creating</Link>
             </div>
           </nav>

@@ -1,148 +1,260 @@
 import { Check } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 
 const plans = [
   {
     id: 'free',
-    name: '免费版',
+    name: 'Free',
     price: '¥0',
-    priceSub: '/年',
+    period: '/ year',
     royalty: '8%',
-    color: 'border-light-ink',
-    highlight: false,
+    maxWorks: 3,
     features: [
-      '最多 10 件作品',
-      '1 个外部平台',
-      '基础数据统计',
-      '邮件支持',
+      'Up to 3 artworks',
+      'Basic dashboard',
+      'Email support',
     ],
-    disabled: [],
+    disabled: [
+      'External platform sync',
+      'Priority review',
+      'Advanced analytics',
+    ],
+    cta: 'Current plan',
+    color: '#f6f5f4',
+    border: 'rgba(0,0,0,0.1)',
   },
   {
     id: 'basic',
-    name: '基础版',
+    name: 'Basic',
     price: '¥299',
-    priceSub: '/年',
+    period: '/ year',
     royalty: '30%',
-    color: 'border-vermilion',
-    highlight: true,
-    recommended: true,
+    maxWorks: 20,
     features: [
-      '最多 50 件作品',
-      '3 个外部平台',
-      '高级数据分析',
-      '优先审核',
-      'Email 支持',
+      'Up to 20 artworks',
+      'External platform sync',
+      'Priority review',
+      'Email support',
     ],
-    disabled: [],
+    disabled: [
+      'Advanced analytics',
+      'Priority withdrawals',
+    ],
+    cta: 'Upgrade',
+    recommended: true,
+    color: '#ffffff',
+    border: '#0075de',
   },
   {
     id: 'pro',
-    name: '专业版',
+    name: 'Pro',
     price: '¥599',
-    priceSub: '/年',
+    period: '/ year',
     royalty: '45%',
-    color: 'border-light-ink',
-    highlight: false,
+    maxWorks: null,
     features: [
-      '无限作品数量',
-      '无限外部平台',
-      '高级数据分析',
-      '优先审核',
-      '专属客服',
-      '优先提现',
+      'Unlimited artworks',
+      'External platform sync',
+      'Priority review',
+      'Advanced analytics',
+      'Priority withdrawals',
+      'Dedicated support',
     ],
     disabled: [],
+    cta: 'Upgrade',
+    color: '#ffffff',
+    border: 'rgba(0,0,0,0.1)',
   },
 ]
 
-const currentPlan = 'basic'
+const PLAN_ORDER = { free: 0, basic: 1, pro: 2 }
 
 export default function Subscription() {
+  const { user } = useAuth()
+  const currentPlanId = user?.plan || 'free'
+
+  const handleUpgrade = (targetPlan: string) => {
+    // TODO: connect to payment flow (Alipay/WeChat for CNY subscription)
+    alert(`Upgrade to ${targetPlan} — payment integration coming soon. Contact us at support@layershop.store`)
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink">订阅方案</h1>
-        <p className="text-smoke text-sm mt-1">选择最适合您的方案，随时升级或降级</p>
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px', color: 'rgba(0,0,0,0.95)', marginBottom: 4 }}>
+          Subscription
+        </h1>
+        <p style={{ fontSize: 14, color: '#615d59' }}>
+          Choose the right plan for your creative business.
+        </p>
       </div>
 
-      {/* Current plan */}
-      <div className="bg-ink text-paper rounded-xl p-5">
-        <p className="text-xs text-paper/50 mb-1">当前方案</p>
-        <div className="flex items-center justify-between">
-          <p className="text-xl font-semibold">
-            {plans.find(p => p.id === currentPlan)?.name}
-            <span className="text-paper/50 text-sm ml-2">
-              ({plans.find(p => p.id === currentPlan)?.royalty} 版税)
-            </span>
+      {/* Current plan banner */}
+      {user && (
+        <div
+          style={{
+            background: 'rgba(0,0,0,0.95)',
+            borderRadius: 10,
+            padding: '16px 20px',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <div>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 3 }}>Current plan</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>
+              {plans.find(p => p.id === currentPlanId)?.name || 'Free'}
+              <span style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.5)', marginLeft: 8 }}>
+                · {(plans.find(p => p.id === currentPlanId)?.royalty || '8%')} royalty
+              </span>
+            </p>
+          </div>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+            Renews {user.subscription_expires_at ? new Date(user.subscription_expires_at).toLocaleDateString() : '—'}
           </p>
-          <p className="text-sm text-paper/50">到期日：2027-04-14</p>
         </div>
-      </div>
+      )}
 
       {/* Plans */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 32 }}>
         {plans.map((plan) => {
-          const isCurrent = plan.id === currentPlan
-          const isUpgrade = !isCurrent && plan.id !== 'free' && plan.id !== currentPlan
+          const isCurrent = plan.id === currentPlanId
+          const currentOrder = PLAN_ORDER[currentPlanId as keyof typeof PLAN_ORDER] || 0
+          const planOrder = PLAN_ORDER[plan.id as keyof typeof PLAN_ORDER] || 0
+          const isUpgrade = planOrder > currentOrder
 
           return (
             <div
               key={plan.id}
-              className={`relative bg-white rounded-2xl border-2 ${plan.color} p-6 ${plan.highlight ? 'shadow-md' : ''}`}
+              style={{
+                background: plan.color,
+                border: `2px solid ${isCurrent ? plan.border : plan.border === '#0075de' ? '#0075de' : 'rgba(0,0,0,0.1)'}`,
+                borderRadius: 12,
+                padding: '24px 20px',
+                position: 'relative',
+                opacity: isCurrent ? 1 : 1,
+              }}
             >
-              {plan.recommended && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-vermilion text-paper text-xs rounded-full">
-                  推荐
-                </span>
+              {plan.recommended && !isCurrent && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -12,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    padding: '3px 12px',
+                    background: '#0075de',
+                    color: '#fff',
+                    borderRadius: 20,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  RECOMMENDED
+                </div>
               )}
 
-              <div className="mb-4">
-                <p className="text-base font-semibold text-ink">{plan.name}</p>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold text-ink">{plan.price}</span>
-                  <span className="text-sm text-smoke">{plan.priceSub}</span>
+              {/* Plan header */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'rgba(0,0,0,0.9)' }}>{plan.name}</p>
+                  {isCurrent && (
+                    <span className="badge badge-blue" style={{ fontSize: 11 }}>Current</span>
+                  )}
                 </div>
-                <p className="text-sm font-medium text-vermilion mt-1">{plan.royalty} 版税</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: 'rgba(0,0,0,0.95)', letterSpacing: '-1px' }}>
+                    {plan.price}
+                  </span>
+                  <span style={{ fontSize: 13, color: '#a39e98' }}>{plan.period}</span>
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#0075de', marginTop: 3 }}>
+                  {plan.royalty} royalty
+                </p>
               </div>
 
-              <ul className="space-y-2.5 mb-6">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-smoke">
-                    <Check size={14} className="text-bamboo flex-shrink-0" /> {f}
+              {/* Features */}
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 20 }}>
+                {plan.features.map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#615d59' }}>
+                    <Check size={13} style={{ color: '#1aae39', flexShrink: 0 }} />
+                    {f}
+                  </li>
+                ))}
+                {plan.disabled.map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#a39e98' }}>
+                    <span style={{ width: 13, textAlign: 'center', flexShrink: 0 }}>–</span>
+                    {f}
                   </li>
                 ))}
               </ul>
 
-              <button
-                disabled={isCurrent}
-                className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isCurrent
-                    ? 'bg-light-ink text-smoke cursor-not-allowed'
-                    : isUpgrade
-                    ? 'bg-vermilion text-paper hover:bg-vermilion/90'
-                    : 'bg-warm-gray text-ink hover:bg-light-ink'
-                }`}
-              >
-                {isCurrent ? '当前方案' : isUpgrade ? '立即升级' : '降级'}
-              </button>
+              {/* CTA */}
+              {isCurrent ? (
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    background: 'rgba(0,0,0,0.04)',
+                    borderRadius: 4,
+                    textAlign: 'center',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#615d59',
+                  }}
+                >
+                  Current plan ✓
+                </div>
+              ) : isUpgrade ? (
+                <button
+                  onClick={() => handleUpgrade(plan.id)}
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '9px 12px', fontSize: 14 }}
+                >
+                  Upgrade to {plan.name} →
+                </button>
+              ) : (
+                <button
+                  className="btn-secondary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '9px 12px', fontSize: 14 }}
+                  onClick={() => alert('Downgrade will take effect at next billing cycle. Contact support@layershop.store')}
+                >
+                  Switch to {plan.name}
+                </button>
+              )}
             </div>
           )
         })}
       </div>
 
       {/* FAQ */}
-      <div className="bg-white rounded-xl border border-light-ink p-6">
-        <h3 className="font-semibold text-ink mb-4">常见问题</h3>
-        <div className="space-y-4">
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid rgba(0,0,0,0.1)',
+          borderRadius: 12,
+          padding: '24px',
+        }}
+      >
+        <p style={{ fontSize: 15, fontWeight: 700, color: 'rgba(0,0,0,0.9)', marginBottom: 16 }}>
+          Frequently Asked Questions
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {[
-            { q: '订阅费用如何支付？', a: '支持支付宝、微信支付、银行转账，按年结算。' },
-            { q: '可以随时更换方案吗？', a: '可以。升级立即生效，降级次年生效。' },
-            { q: '版税如何结算？', a: '通过 Stripe Connect 美元结算，每月自动打款到您的账户。' },
-            { q: '免费版可以试用吗？', a: '可以。免费版永久有效，无时间限制。' },
-          ].map((item) => (
-            <div key={item.q} className="border-b border-light-ink last:border-0 pb-4 last:pb-0">
-              <p className="text-sm font-medium text-ink mb-1">{item.q}</p>
-              <p className="text-sm text-smoke">{item.a}</p>
+            { q: 'How do I pay?', a: 'We accept Alipay, WeChat Pay, and bank transfer (CNY). Billed annually.' },
+            { q: 'Can I switch plans?', a: 'Yes. Upgrades take effect immediately. Downgrades apply at the next billing cycle.' },
+            { q: 'How are royalties paid?', a: 'Royalties are paid in USD via Payoneer or PayPal, monthly, after you reach the minimum of $50.' },
+            { q: 'Is the free plan really free?', a: 'Yes. Free plan is free forever with no time limits.' },
+          ].map((item, i) => (
+            <div key={i} style={{ paddingBottom: i < 3 ? 16 : 0, borderBottom: i < 3 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(0,0,0,0.85)', marginBottom: 4 }}>{item.q}</p>
+              <p style={{ fontSize: 13, color: '#615d59', lineHeight: 1.6 }}>{item.a}</p>
             </div>
           ))}
         </div>

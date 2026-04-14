@@ -1,146 +1,310 @@
-import { ExternalLink, RefreshCw, Check, Link2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ExternalLink, RefreshCw, Check, Link2, Loader2 } from 'lucide-react'
+import api from '../../services/api'
 
-const platforms = [
-  {
-    id: 'gumroad',
+interface ExternalAccount {
+  id: number
+  platform: string
+  account_name: string | null
+  shop_url: string | null
+  connected: boolean
+  last_sync: string | null
+  total_sales: string | null
+}
+
+const PLATFORM_META = {
+  gumroad: {
     name: 'Gumroad',
-    desc: '全球最受欢迎的创作者销售平台，支持数字和实体产品',
+    desc: 'Popular creator marketplace for digital and physical products. Connect to sync sales orders.',
     website: 'gumroad.com',
     color: '#FF6B35',
-    connected: true,
-    accountName: 'layers-artist',
-    lastSync: '5 分钟前',
-    totalSales: '$420',
+    connectHelp: 'You need a Gumroad account. After connecting, enter your Gumroad API key.',
   },
-  {
-    id: 'etsy',
+  etsy: {
     name: 'Etsy',
-    desc: '手工艺和原创设计产品的顶级市场',
+    desc: 'Handmade and original design marketplace. Requires Etsy Open API application.',
     website: 'etsy.com',
     color: '#F56400',
-    connected: true,
-    accountName: 'Layers Art Shop',
-    lastSync: '2 小时前',
-    totalSales: '$210',
+    connectHelp: 'You need an approved Etsy developer application. Etsy OAuth is required.',
   },
-  {
-    id: 'amazon',
-    name: 'Amazon Merch',
-    desc: '全球最大电商平台，按需印刷服务',
+  amazon: {
+    name: 'Amazon Merch on Demand',
+    desc: "World's largest e-commerce platform print-on-demand. Available for approved Pro creators.",
     website: 'merch.amazon.com',
     color: '#FF9900',
-    connected: false,
-    accountName: null,
-    lastSync: null,
-    totalSales: null,
+    connectHelp: 'Pro plan required. Amazon Merch requires an approved application.',
   },
-  {
-    id: 'redbubble',
+  redbubble: {
     name: 'Redbubble',
-    desc: '独立艺术家产品平台，全球销售',
+    desc: 'Independent artist products marketplace with global reach.',
     website: 'redbubble.com',
     color: '#E34234',
-    connected: false,
-    accountName: null,
-    lastSync: null,
-    totalSales: null,
+    connectHelp: 'Requires Redbubble account. API integration coming soon.',
   },
-]
+}
 
 export default function ExternalAccounts() {
+  const [accounts, setAccounts] = useState<ExternalAccount[]>([])
+  const [showConnect, setShowConnect] = useState<string | null>(null)
+  const [connectForm, setConnectForm] = useState({ api_key: '', shop_url: '' })
+  const [connecting, setConnecting] = useState(false)
+  const [syncing, setSyncing] = useState<string | null>(null)
+
+  const load = () => {
+    api.getExternalAccounts()
+      .then((data: unknown) => setAccounts((data as ExternalAccount[]) || []))
+      .catch(() => setAccounts([]))
+
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleConnect = async (platform: string) => {
+    if (!connectForm.api_key.trim()) return
+    setConnecting(true)
+    try {
+      await api.addExternalAccount({ platform, api_key: connectForm.api_key, shop_url: connectForm.shop_url })
+      setShowConnect(null)
+      setConnectForm({ api_key: '', shop_url: '' })
+      load()
+    } catch {}
+    setConnecting(false)
+  }
+
+  const connectedCount = accounts.filter(a => a.connected).length
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink">外部平台</h1>
-        <p className="text-smoke text-sm mt-1">连接您的外部销售平台，自动同步订单数据</p>
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px', color: 'rgba(0,0,0,0.95)', marginBottom: 4 }}>
+          External Platforms
+        </h1>
+        <p style={{ fontSize: 14, color: '#615d59' }}>
+          Connect your existing shop accounts to automatically sync orders into your Layers dashboard.
+        </p>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-light-ink p-5">
-          <p className="text-xs text-smoke mb-1">已连接</p>
-          <p className="text-2xl font-semibold text-ink">{platforms.filter(p=>p.connected).length}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 28 }}>
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <p style={{ fontSize: 12, color: '#a39e98', marginBottom: 6 }}>Connected</p>
+          <p style={{ fontSize: 26, fontWeight: 700, color: 'rgba(0,0,0,0.95)', letterSpacing: '-0.5px' }}>
+            {connectedCount}
+          </p>
         </div>
-        <div className="bg-white rounded-xl border border-light-ink p-5">
-          <p className="text-xs text-smoke mb-1">本月销售</p>
-          <p className="text-2xl font-semibold text-ink">$630</p>
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <p style={{ fontSize: 12, color: '#a39e98', marginBottom: 6 }}>Monthly Sales</p>
+          <p style={{ fontSize: 26, fontWeight: 700, color: 'rgba(0,0,0,0.95)', letterSpacing: '-0.5px' }}>
+            —
+          </p>
         </div>
-        <div className="bg-white rounded-xl border border-light-ink p-5">
-          <p className="text-xs text-smoke mb-1">同步状态</p>
-          <p className="text-sm font-medium text-bamboo flex items-center gap-1 mt-1">
-            <RefreshCw size={14} /> 实时同步中
+        <div className="card" style={{ padding: '16px 18px' }}>
+          <p style={{ fontSize: 12, color: '#a39e98', marginBottom: 6 }}>Sync Status</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#2a9d99', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <RefreshCw size={13} />
+            {connectedCount > 0 ? 'Active' : 'No connections'}
           </p>
         </div>
       </div>
 
       {/* Platform list */}
-      <div className="space-y-4">
-        {platforms.map((platform) => (
-          <div key={platform.id} className="bg-white rounded-xl border border-light-ink p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                {/* Platform logo placeholder */}
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-                  style={{ backgroundColor: platform.color }}
-                >
-                  {platform.name[0]}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+        {(['gumroad', 'etsy', 'amazon', 'redbubble'] as const).map(platformId => {
+          const meta = PLATFORM_META[platformId]
+          const account = accounts.find(a => a.platform === platformId)
+          const isConnected = !!account?.connected
+          const isConnecting = showConnect === platformId
+
+          return (
+            <div
+              key={platformId}
+              className="card"
+              style={{ padding: '18px 20px' }}
+            >
+              {isConnecting ? (
+                /* Connect form */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        background: meta.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {meta.name[0]}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(0,0,0,0.9)' }}>Connect {meta.name}</p>
+                      <p style={{ fontSize: 12, color: '#a39e98' }}>{meta.connectHelp}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(0,0,0,0.85)', marginBottom: 4 }}>
+                      API Key or Access Token *
+                    </label>
+                    <input
+                      className="input"
+                      type="password"
+                      placeholder={`Your ${meta.name} API key...`}
+                      value={connectForm.api_key}
+                      onChange={e => setConnectForm({ ...connectForm, api_key: e.target.value })}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => { setShowConnect(null); setConnectForm({ api_key: '', shop_url: '' }) }}
+                      className="btn-secondary"
+                      style={{ flex: 1, justifyContent: 'center', padding: '8px' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleConnect(platformId)}
+                      disabled={connecting || !connectForm.api_key.trim()}
+                      className="btn-primary"
+                      style={{ flex: 1, justifyContent: 'center', padding: '8px' }}
+                    >
+                      {connecting ? <Loader2 size={13} className="animate-spin" /> : null}
+                      {connecting ? 'Connecting...' : 'Connect'}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-ink">{platform.name}</h3>
-                    {platform.connected ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-bamboo/10 text-bamboo text-xs rounded-full">
-                        <Check size={10} /> 已连接
-                      </span>
+              ) : (
+                /* Normal view */
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        background: meta.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {meta.name[0]}
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(0,0,0,0.9)' }}>{meta.name}</p>
+                        {isConnected ? (
+                          <span className="badge badge-green" style={{ fontSize: 11 }}>
+                            <Check size={9} style={{ marginRight: 2 }} />
+                            Connected
+                          </span>
+                        ) : (
+                          <span className="badge badge-gray" style={{ fontSize: 11 }}>Not connected</span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 12, color: '#615d59', marginBottom: 2 }}>{meta.desc}</p>
+                      {isConnected && (
+                        <div style={{ display: 'flex', gap: 16, marginTop: 5 }}>
+                          {account?.account_name && (
+                            <span style={{ fontSize: 12, color: '#615d59' }}>
+                              Account: <strong style={{ color: 'rgba(0,0,0,0.85)' }}>{account.account_name}</strong>
+                            </span>
+                          )}
+                          {account?.last_sync && (
+                            <span style={{ fontSize: 12, color: '#a39e98' }}>
+                              Last sync: {new Date(account.last_sync).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
+                    {isConnected ? (
+                      <>
+                        <button
+                          onClick={() => setSyncing(platformId)}
+                          disabled={!!syncing}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            padding: '6px 10px',
+                            background: 'rgba(0,0,0,0.04)',
+                            border: '1px solid rgba(0,0,0,0.1)',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: '#615d59',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <RefreshCw size={11} className={syncing === platformId ? 'animate-spin' : ''} />
+                          Sync
+                        </button>
+                        <button
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            padding: '6px 10px',
+                            background: 'transparent',
+                            border: '1px solid rgba(0,0,0,0.1)',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: '#615d59',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <ExternalLink size={11} />
+                          Manage
+                        </button>
+                      </>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-light-ink text-smoke text-xs rounded-full">
-                        未连接
-                      </span>
+                      <button
+                        onClick={() => setShowConnect(platformId)}
+                        className="btn-primary"
+                        style={{ padding: '6px 12px', fontSize: 13 }}
+                      >
+                        <Link2 size={12} />
+                        Connect
+                      </button>
                     )}
                   </div>
-                  <p className="text-xs text-smoke mt-0.5">{platform.desc}</p>
-                  <p className="text-xs text-smoke mt-0.5">{platform.website}</p>
-                  {platform.connected && (
-                    <div className="flex gap-4 mt-2">
-                      <span className="text-xs text-smoke">账号：<span className="text-ink">{platform.accountName}</span></span>
-                      <span className="text-xs text-smoke">总销量：<span className="text-ink">{platform.totalSales}</span></span>
-                      <span className="text-xs text-smoke">上次同步：<span className="text-ink">{platform.lastSync}</span></span>
-                    </div>
-                  )}
                 </div>
-              </div>
-
-              <div className="flex gap-2 flex-shrink-0">
-                {platform.connected ? (
-                  <>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 border border-light-ink text-xs text-smoke rounded-lg hover:bg-warm-gray transition-colors">
-                      <RefreshCw size={12} /> 立即同步
-                    </button>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 border border-light-ink text-xs text-smoke rounded-lg hover:bg-warm-gray transition-colors">
-                      <ExternalLink size={12} /> 管理
-                    </button>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-vermilion border border-vermilion/30 rounded-lg hover:bg-vermilion/5 transition-colors">
-                      断开
-                    </button>
-                  </>
-                ) : (
-                  <button className="flex items-center gap-1.5 px-4 py-1.5 bg-vermilion text-paper text-xs font-medium rounded-lg hover:bg-vermilion/90 transition-colors">
-                    <Link2 size={12} /> 连接
-                  </button>
-                )}
-              </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Note */}
-      <div className="bg-warm-gray rounded-xl p-5">
-        <p className="text-sm text-smoke">
-          <strong className="text-ink">连接外部平台后：</strong>
-          AI Agent 会自动每 15 分钟同步您的订单数据，订单信息将自动出现在您的创作者后台。
-          所有敏感信息（API Key 等）均加密存储，我们绝不会将其用于平台自身运营以外的任何用途。
+      <div
+        style={{
+          background: '#f6f5f4',
+          border: '1px solid rgba(0,0,0,0.08)',
+          borderRadius: 10,
+          padding: '16px 18px',
+        }}
+      >
+        <p style={{ fontSize: 13, color: '#615d59', lineHeight: 1.65 }}>
+          <strong style={{ color: 'rgba(0,0,0,0.85)' }}>How it works:</strong>{' '}
+          After connecting, our AI agent syncs your orders every 15 minutes automatically.
+          All sensitive data (API keys) are encrypted. We never use them for anything other than syncing your orders.
         </p>
       </div>
     </div>

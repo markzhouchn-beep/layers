@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, Image, CreditCard, ExternalLink, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Image, CreditCard, ExternalLink, Settings, LogOut, Menu, X } from 'lucide-react'
 import CreatorOverview from './Overview'
 import MyArtworks from './MyArtworks'
 import Subscription from './Subscription'
 import ExternalAccounts from './ExternalAccounts'
+import SettingsPage from './Settings'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'artworks', label: 'My Artworks', icon: Image },
   { id: 'subscription', label: 'Subscription', icon: CreditCard },
   { id: 'external', label: 'External', icon: ExternalLink },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
 export default function CreatorLayout() {
@@ -23,6 +25,7 @@ export default function CreatorLayout() {
       case 'artworks': return <MyArtworks />
       case 'subscription': return <Subscription />
       case 'external': return <ExternalAccounts />
+      case 'settings': return <SettingsPage />
       default: return <CreatorOverview />
     }
   }

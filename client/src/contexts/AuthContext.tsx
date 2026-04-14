@@ -10,6 +10,8 @@ interface User {
   role: string
   plan: string
   avatar?: string
+  subscription_expires_at?: string
+  subscription_status?: string
 }
 
 interface AuthContextType {
