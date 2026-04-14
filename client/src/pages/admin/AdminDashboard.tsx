@@ -1,251 +1,337 @@
 import { useState, useEffect } from 'react'
-import { Check, X, Eye, Image, Users, ShoppingBag, Clock,  RefreshCw } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { Check, X, RefreshCw, Loader2 } from 'lucide-react'
 import api from '../../services/api'
-
-interface AdminStats {
-  total_artworks: number
-  pending_artworks: number
-  total_creators: number
-  total_orders: number
-  total_revenue: string
-  platforms: { platform: string; count: string; revenue: string }[]
-}
 
 interface Artwork {
   id: number
   title: string
-  description: string
+  artist_name: string
+  username: string
   original_image_url: string
   mockup_url: string
   status: string
-  rejection_reason: string
-  username: string
-  artist_name: string
-  plan: string
   created_at: string
 }
 
-interface Creator {
-  id: number
-  username: string
-  email: string
-  artist_name: string
-  plan: string
-  subscription_status: string
-  enabled: boolean
-  artworks_count: number
-  created_at: string
+interface DashboardStats {
+  total_artworks: number
+  pending_count: number
+  total_creators: number
+  total_orders: number
 }
-
-const statusMap: Record<string, { label: string; className: string }> = {
-  pending:   { label: '待审核', className: 'bg-rattan/10 text-rattan' },
-  approved:  { label: '已通过', className: 'bg-bamboo/10 text-bamboo' },
-  rejected:  { label: '已拒绝', className: 'bg-red-50 text-red-500' },
-  active:    { label: '活跃', className: 'bg-bamboo/10 text-bamboo' },
-  inactive:  { label: '未激活', className: 'bg-warm-gray text-smoke' },
-}
-
-const tabs = [
-  { id: 'dashboard', label: '数据大盘' },
-  { id: 'artworks',  label: '作品审核' },
-  { id: 'orders',     label: '订单管理' },
-  { id: 'creators',  label: '创作者' },
-  { id: 'platforms',  label: '外部平台' },
-] as const
-type TabId = typeof tabs[number]['id']
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth()
-  const [tab, setTab] = useState<TabId>('dashboard')
-  const [stats, setStats] = useState<AdminStats | null>(null)
-  const [artworks, setArtworks] = useState<Artwork[]>([])
-  const [creators, setCreators] = useState<Creator[]>([])
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [pending, setPending] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState<number | null>(null)
-  const [filterStatus, setFilterStatus] = useState('pending')
-  const [syncLoading, setSyncLoading] = useState(false)
-  const [syncMsg, setSyncMsg] = useState('')
+  const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
+  const [actioning, setActioning] = useState<number | null>(null)
 
-  const loadStats = () => api.getAdminDashboard().then((d: unknown) => setStats(d as AdminStats)).catch(() => {})
-  const loadArtworks = (status?: string) => api.getAdminArtworks({ status: status || undefined }).then((d: unknown) => setArtworks((d as { items: Artwork[] }).items)).catch(() => {})
-  const loadCreators = () => api.getAdminCreators().then((d: unknown) => setCreators(d as Creator[])).catch(() => {})
-
-  useEffect(() => {
+  const load = () => {
     setLoading(true)
-    Promise.all([loadStats(), loadArtworks(), loadCreators()]).finally(() => setLoading(false))
-  }, [])
+    Promise.all([
+      api.getAdminDashboard(),
+      api.getAdminArtworks({ status: 'pending' }),
+    ])
+      .then(([dashData, artData]: [unknown, unknown]) => {
+        setStats(dashData as DashboardStats)
+        setPending((artData as { items: Artwork[] }).items || [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { load() }, [])
 
   const handleApprove = async (id: number) => {
-    setActionLoading(id)
+    setActioning(id)
     try {
       await api.approveArtwork(id)
-      setArtworks(prev => prev.filter(a => a.id !== id))
-      loadStats()
+      setPending(prev => prev.filter(a => a.id !== id))
+      // Refresh stats
+      api.getAdminDashboard().then((d: unknown) => setStats(d as DashboardStats)).catch(() => {})
     } catch {}
-    finally { setActionLoading(null) }
+    setActioning(null)
   }
 
   const handleReject = async (id: number) => {
-    setActionLoading(id)
+    setActioning(id)
     try {
       await api.rejectArtwork(id)
-      setArtworks(prev => prev.filter(a => a.id !== id))
-      loadStats()
+      setPending(prev => prev.filter(a => a.id !== id))
     } catch {}
-    finally { setActionLoading(null) }
+    setActioning(null)
   }
 
-  const handleSyncAll = async () => {
-    setSyncLoading(true)
-    setSyncMsg('')
+  const handleSync = async () => {
+    setActioning(-1)
     try {
       await api.syncPrintifyAll()
-      setSyncMsg('同步完成')
-    } catch (e: unknown) {
-      setSyncMsg('同步失败: ' + (e instanceof Error ? e.message : ''))
-    }
-    finally { setSyncLoading(false) }
+    } catch {}
+    setActioning(null)
   }
 
-  const handleSyncPending = async () => {
-    const pending = await api.getPrintifyPending()
-    setSyncMsg(`待同步作品: ${(pending as Artwork[]).length} 件`)
-  }
+  const statCards = [
+    { label: 'Total Artworks', value: stats?.total_artworks ?? '-', accent: '#0075de' },
+    { label: 'Pending Review', value: stats?.pending_count ?? '-', accent: '#dd5b00' },
+    { label: 'Total Creators', value: stats?.total_creators ?? '-', accent: '#2a9d99' },
+    { label: 'Total Orders', value: stats?.total_orders ?? '-', accent: '#1aae39' },
+  ]
 
   return (
-    <div className="pt-16 min-h-screen bg-warm-gray">
-      {/* Header */}
-      <div className="bg-ink text-paper px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
+    <div style={{ paddingTop: 72, minHeight: '100vh', background: '#f6f5f4' }}>
+      {/* Admin header */}
+      <div
+        style={{
+          background: 'rgba(0,0,0,0.95)',
+          padding: '32px 0 28px',
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
             <div>
-              <h1 className="text-2xl font-semibold">运营管理后台</h1>
-              <p className="text-paper/50 text-sm mt-1">Layers 平台管理中心</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-paper/50">{user?.email}</span>
-              <button onClick={logout} className="text-xs text-paper/50 hover:text-paper underline">退出</button>
-              <div className="w-8 h-8 bg-vermilion rounded-full flex items-center justify-center text-sm font-medium">
-                {user?.username?.[0]?.toUpperCase() || 'A'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Nav tabs */}
-      <div className="bg-paper border-b border-light-ink sticky top-16 z-30">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-1 h-12">
-            {tabs.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  tab === t.id ? 'bg-ink text-paper' : 'text-smoke hover:text-ink hover:bg-warm-gray'
-                }`}
+              <h1
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  letterSpacing: '-0.3px',
+                }}
               >
-                {t.label}
-              </button>
+                Admin Dashboard
+              </h1>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
+                Manage artworks, creators and platform operations
+              </p>
+            </div>
+            <button
+              onClick={handleSync}
+              disabled={actioning === -1}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                background: 'rgba(255,255,255,0.1)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: actioning === -1 ? 'not-allowed' : 'pointer',
+                opacity: actioning === -1 ? 0.6 : 1,
+              }}
+            >
+              <RefreshCw size={13} className={actioning === -1 ? 'animate-spin' : ''} />
+              Sync Printify
+            </button>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+            {statCards.map((s) => (
+              <div
+                key={s.label}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  padding: '14px 16px',
+                }}
+              >
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>{s.label}</p>
+                <p
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 700,
+                    color: '#fff',
+                    letterSpacing: '-0.5px',
+                    lineHeight: 1,
+                  }}
+                >
+                  {s.value}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Content */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
+        {/* Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 2,
+            background: '#ffffff',
+            border: '1px solid rgba(0,0,0,0.1)',
+            borderRadius: 8,
+            padding: 4,
+            width: 'fit-content',
+            marginBottom: 20,
+          }}
+        >
+          {[
+            { key: 'pending', label: 'Pending Review', count: pending.length },
+            { key: 'approved', label: 'Approved', count: null },
+            { key: 'rejected', label: 'Rejected', count: null },
+          ].map((t_) => (
+            <button
+              key={t_.key}
+              onClick={() => setTab(t_.key as typeof tab)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 5,
+                border: 'none',
+                fontSize: 13,
+                fontWeight: tab === t_.key ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.12s',
+                background: tab === t_.key ? 'rgba(0,0,0,0.06)' : 'transparent',
+                color: tab === t_.key ? 'rgba(0,0,0,0.9)' : '#615d59',
+              }}
+            >
+              {t_.label}
+              {t_.count !== null && t_.count > 0 && (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    padding: '1px 6px',
+                    background: '#dd5b00',
+                    color: '#fff',
+                    borderRadius: 10,
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
+                  {t_.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-        {/* Dashboard */}
-        {tab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: '总作品', value: stats?.total_artworks ?? '-', icon: Image, color: 'text-ink' },
-                { label: '待审核', value: stats?.pending_artworks ?? '-', icon: Clock, color: 'text-rattan' },
-                { label: '创作者', value: stats?.total_creators ?? '-', icon: Users, color: 'text-bamboo' },
-                { label: '总订单', value: stats?.total_orders ?? '-', icon: ShoppingBag, color: 'text-vermilion' },
-              ].map(s => (
-                <div key={s.label} className="bg-white rounded-xl border border-light-ink p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-smoke">{s.label}</p>
-                    <s.icon size={16} className={s.color} />
-                  </div>
-                  <p className="text-2xl font-semibold text-ink">{s.value}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Printify sync */}
-            <div className="bg-white rounded-xl border border-light-ink p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-ink">Printify 同步</h2>
-                <button onClick={handleSyncPending} className="text-xs text-smoke hover:text-ink">检查待同步</button>
-              </div>
-              <div className="flex gap-3">
-                <button onClick={handleSyncAll} disabled={syncLoading} className="flex items-center gap-1.5 px-4 py-2 bg-vermilion text-paper text-sm rounded-lg disabled:opacity-60">
-                  {syncLoading ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                  同步全部待发布作品
-                </button>
-              </div>
-              {syncMsg && <p className="text-xs text-smoke mt-2">{syncMsg}</p>}
-            </div>
-          </div>
-        )}
-
-        {/* Artworks */}
-        {tab === 'artworks' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-ink">作品审核</h2>
-              <div className="flex gap-1 bg-warm-gray rounded-lg p-1">
-                {['pending', 'approved', 'rejected'].map(s => (
-                  <button key={s} onClick={() => { setFilterStatus(s); loadArtworks(s) }}
-                    className={`px-3 py-1 rounded text-xs font-medium ${filterStatus === s ? 'bg-paper text-ink shadow-sm' : 'text-smoke'}`}>
-                    {s === 'pending' ? '待审核' : s === 'approved' ? '已通过' : '已拒绝'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
+        {/* Artwork list */}
+        {tab === 'pending' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {loading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => <div key={i} className="bg-white rounded-xl border border-light-ink h-24 animate-pulse" />)}
+              <div style={{ textAlign: 'center', padding: '60px 0', color: '#615d59' }}>
+                <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                <p style={{ fontSize: 14 }}>Loading...</p>
               </div>
-            ) : artworks.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-xl border border-light-ink">
-                <p className="text-smoke text-sm">暂无{filterStatus === 'pending' ? '待审核' : filterStatus === 'approved' ? '已通过' : '已拒绝'}作品</p>
+            ) : pending.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '60px 0',
+                  background: '#ffffff',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  borderRadius: 12,
+                }}
+              >
+                <p style={{ fontSize: 15, color: '#615d59' }}>No artworks pending review</p>
+                <p style={{ fontSize: 13, color: '#a39e98', marginTop: 4 }}>Check back later for new submissions</p>
               </div>
             ) : (
-              artworks.map(a => (
-                <div key={a.id} className="bg-white rounded-xl border border-light-ink p-5 flex items-center gap-4">
-                  <img
-                    src={a.mockup_url || a.original_image_url || ''}
-                    alt={a.title}
-                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0 bg-warm-gray"
-                    onError={e => (e.currentTarget.style.display = 'none')}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink">{a.title}</p>
-                    <p className="text-xs text-smoke mt-0.5">
-                      {a.artist_name || a.username} · {a.plan} · {new Date(a.created_at).toLocaleDateString('zh-CN')}
-                    </p>
-                    {a.rejection_reason && <p className="text-xs text-red-500 mt-1">拒绝原因：{a.rejection_reason}</p>}
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    {filterStatus === 'pending' && (
-                      <>
-                        <button onClick={() => handleApprove(a.id)} disabled={actionLoading === a.id}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-bamboo text-paper text-xs font-medium rounded-lg hover:bg-bamboo/90 disabled:opacity-60">
-                          <Check size={14} /> 通过
-                        </button>
-                        <button onClick={() => handleReject(a.id)} disabled={actionLoading === a.id}
-                          className="flex items-center gap-1.5 px-4 py-2 border border-light-ink text-xs text-smoke rounded-lg hover:bg-warm-gray disabled:opacity-60">
-                          <X size={14} /> 拒绝
-                        </button>
-                      </>
+              pending.map((artwork) => (
+                <div
+                  key={artwork.id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    borderRadius: 10,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    boxShadow: 'var(--shadow-card)',
+                  }}
+                >
+                  {/* Thumbnail */}
+                  <div
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      background: '#f6f5f4',
+                    }}
+                  >
+                    {(artwork.mockup_url || artwork.original_image_url) ? (
+                      <img
+                        src={artwork.mockup_url || artwork.original_image_url}
+                        alt={artwork.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%' }} />
                     )}
-                    <button className="w-9 h-9 flex items-center justify-center border border-light-ink rounded-lg text-smoke hover:bg-warm-gray">
-                      <Eye size={14} />
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: 'rgba(0,0,0,0.9)',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {artwork.title}
+                    </p>
+                    <p style={{ fontSize: 13, color: '#615d59' }}>
+                      by {artwork.artist_name || artwork.username}
+                    </p>
+                    <p style={{ fontSize: 12, color: '#a39e98', marginTop: 1 }}>
+                      {new Date(artwork.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <button
+                      onClick={() => handleApprove(artwork.id)}
+                      disabled={actioning === artwork.id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '7px 12px',
+                        background: actioning === artwork.id ? '#1aae39aa' : '#1aae39',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: actioning === artwork.id ? 'not-allowed' : 'pointer',
+                        opacity: actioning === artwork.id ? 0.7 : 1,
+                      }}
+                    >
+                      {actioning === artwork.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(artwork.id)}
+                      disabled={actioning === artwork.id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '7px 12px',
+                        background: 'rgba(0,0,0,0.04)',
+                        color: '#615d59',
+                        border: '1px solid rgba(0,0,0,0.1)',
+                        borderRadius: 4,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: actioning === artwork.id ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      <X size={13} />
+                      Reject
                     </button>
                   </div>
                 </div>
@@ -254,81 +340,19 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Orders */}
-        {tab === 'orders' && (
-          <div className="bg-white rounded-xl border border-light-ink overflow-hidden">
-            <div className="px-6 py-4 border-b border-light-ink">
-              <h2 className="font-semibold text-ink">全部订单</h2>
-            </div>
-            {loading ? (
-              <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-12 bg-warm-gray rounded animate-pulse" />)}</div>
-            ) : (
-              <div className="divide-y divide-light-ink">
-                <p className="px-6 py-8 text-sm text-smoke text-center">订单功能开发中（需先接入外部平台）</p>
-              </div>
-            )}
+        {tab === 'approved' && (
+          <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12 }}>
+            <p style={{ fontSize: 15, color: '#615d59' }}>Approved artworks</p>
+            <p style={{ fontSize: 13, color: '#a39e98', marginTop: 4 }}>View in storefront</p>
           </div>
         )}
 
-        {/* Creators */}
-        {tab === 'creators' && (
-          <div className="bg-white rounded-xl border border-light-ink overflow-hidden">
-            <div className="px-6 py-4 border-b border-light-ink">
-              <h2 className="font-semibold text-ink">创作者列表 · {creators.length}</h2>
-            </div>
-            <div className="divide-y divide-light-ink">
-              {loading ? (
-                <div className="p-6">{[...Array(3)].map((_, i) => <div key={i} className="h-12 bg-warm-gray rounded mb-2 animate-pulse" />)}</div>
-              ) : creators.length === 0 ? (
-                <p className="px-6 py-8 text-sm text-smoke text-center">暂无创作者</p>
-              ) : (
-                creators.map(c => (
-                  <div key={c.id} className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-warm-gray rounded-full flex items-center justify-center text-sm font-medium text-ink">
-                        {c.artist_name?.[0] || c.username?.[0] || '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-ink">{c.artist_name || c.username}</p>
-                        <p className="text-xs text-smoke">{c.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs px-2 py-0.5 bg-warm-gray text-smoke rounded">{c.plan}</span>
-                      <span className="text-xs text-smoke">{c.artworks_count} 件作品</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${statusMap[c.subscription_status]?.className || statusMap.inactive.className}`}>
-                        {statusMap[c.subscription_status]?.label || c.subscription_status}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+        {tab === 'rejected' && (
+          <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12 }}>
+            <p style={{ fontSize: 15, color: '#615d59' }}>Rejected artworks</p>
+            <p style={{ fontSize: 13, color: '#a39e98', marginTop: 4 }}>None</p>
           </div>
         )}
-
-        {/* Platforms */}
-        {tab === 'platforms' && (
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              { platform: 'Gumroad', desc: '全球创作者销售平台', color: '#FF6B35' },
-              { platform: 'Etsy', desc: '手工艺品与原创设计市场', color: '#F56400' },
-              { platform: 'Amazon Merch', desc: '全球最大电商按需印刷', color: '#FF9900' },
-            ].map(p => (
-              <div key={p.platform} className="bg-white rounded-xl border border-light-ink p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                  <h3 className="font-semibold text-ink">{p.platform}</h3>
-                </div>
-                <p className="text-xs text-smoke mb-4">{p.desc}</p>
-                <button className="w-full py-2 border border-light-ink text-sm text-smoke rounded-lg hover:bg-warm-gray">
-                  配置 API Key
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
       </div>
     </div>
   )

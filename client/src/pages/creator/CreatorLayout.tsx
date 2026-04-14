@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, Image, CreditCard, ExternalLink, Settings, LogOut, Menu, X} from 'lucide-react'
+import { LayoutDashboard, Image, CreditCard, ExternalLink, LogOut, Menu, X } from 'lucide-react'
 import CreatorOverview from './Overview'
 import MyArtworks from './MyArtworks'
 import Subscription from './Subscription'
 import ExternalAccounts from './ExternalAccounts'
 
-const nav = [
-  { id: 'overview', label: '数据概览', icon: LayoutDashboard },
-  { id: 'artworks', label: '我的作品', icon: Image },
-  { id: 'subscription', label: '订阅方案', icon: CreditCard },
-  { id: 'external', label: '外部平台', icon: ExternalLink },
+const tabs = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'artworks', label: 'My Artworks', icon: Image },
+  { id: 'subscription', label: 'Subscription', icon: CreditCard },
+  { id: 'external', label: 'External', icon: ExternalLink },
 ]
 
 export default function CreatorLayout() {
@@ -28,72 +28,175 @@ export default function CreatorLayout() {
   }
 
   return (
-    <div className="pt-16 min-h-screen bg-warm-gray">
-      {/* Top nav bar */}
-      <div className="bg-paper border-b border-light-ink sticky top-16 z-40">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center h-14 gap-6">
+    <div style={{ paddingTop: 64, minHeight: '100vh', background: '#f6f5f4' }}>
+      {/* Creator top nav */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 64,
+          zIndex: 40,
+          background: '#ffffff',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1100,
+            margin: '0 auto',
+            padding: '0 24px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              height: 52,
+              gap: 4,
+              overflowX: 'auto',
+            }}
+          >
             <button
-              className="md:hidden text-smoke hover:text-ink"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              onClick={() => setSidebarOpen(v => !v)}
+              style={{
+                display: 'none',
+                padding: 6,
+                borderRadius: 4,
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                marginRight: 4,
+              }}
+              className="md:hidden"
             >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <div className="flex gap-1 overflow-x-auto">
-              {nav.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActive(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    active === item.id
-                      ? 'bg-ink text-paper'
-                      : 'text-smoke hover:text-ink hover:bg-warm-gray'
-                  }`}
-                >
-                  <item.icon size={15} />
-                  {item.label}
-                </button>
-              ))}
-            </div>
-            <div className="ml-auto hidden md:flex items-center gap-4">
-              <Link to="/" className="text-xs text-smoke hover:text-ink">← 返回商店</Link>
-              <button className="flex items-center gap-1.5 text-sm text-smoke hover:text-ink">
-                <Settings size={15} /> 设置
+
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActive(tab.id)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  borderRadius: 4,
+                  border: 'none',
+                  fontSize: 14,
+                  fontWeight: active === tab.id ? 600 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  whiteSpace: 'nowrap',
+                  background: active === tab.id ? 'rgba(0,0,0,0.06)' : 'transparent',
+                  color: active === tab.id ? 'rgba(0,0,0,0.95)' : '#615d59',
+                }}
+              >
+                <tab.icon size={14} />
+                {tab.label}
               </button>
-              <button className="flex items-center gap-1.5 text-sm text-smoke hover:text-ink">
-                <LogOut size={15} /> 退出
+            ))}
+
+            {/* Right actions */}
+            <div
+              style={{
+                marginLeft: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <Link
+                to="/"
+                style={{
+                  fontSize: 13,
+                  color: '#615d59',
+                  textDecoration: 'none',
+                  padding: '4px 8px',
+                  borderRadius: 4,
+                  transition: 'color 0.15s',
+                }}
+              >
+                ← Shop
+              </Link>
+              <button
+                style={{
+                  fontSize: 13,
+                  color: '#615d59',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <LogOut size={13} />
+                Logout
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-ink/50" onClick={() => setSidebarOpen(false)}>
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-paper shadow-lg" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-light-ink">
-              <p className="text-sm font-semibold text-ink">创作者后台</p>
-            </div>
-            <div className="p-2">
-              {nav.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => { setActive(item.id); setSidebarOpen(false) }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${
-                    active === item.id ? 'bg-ink text-paper' : 'text-smoke hover:bg-warm-gray'
-                  }`}
-                >
-                  <item.icon size={16} /> {item.label}
-                </button>
-              ))}
-            </div>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            background: 'rgba(0,0,0,0.3)',
+          }}
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden"
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 220,
+              background: '#ffffff',
+              padding: '16px 12px',
+              boxShadow: '4px 0 20px rgba(0,0,0,0.1)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => { setActive(tab.id); setSidebarOpen(false) }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: active === tab.id ? 'rgba(0,0,0,0.06)' : 'transparent',
+                  color: active === tab.id ? 'rgba(0,0,0,0.95)' : '#615d59',
+                  fontSize: 14,
+                  fontWeight: active === tab.id ? 600 : 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  marginBottom: 2,
+                }}
+              >
+                <tab.icon size={15} />
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
         {renderContent()}
       </div>
     </div>
