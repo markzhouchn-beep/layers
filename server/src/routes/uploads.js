@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import { writeFileSync } from 'fs'
+import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import jwt from 'jsonwebtoken'
 import db from '../db/index.js'
 
 const router = Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'layers-dev-secret-change-in-production'
-const UPLOAD_DIR = process.env.UPLOAD_DIR || join(process.cwd(), '../../uploads')
+const UPLOAD_DIR = process.env.UPLOAD_DIR || '/var/www/layers/uploads'
 
 function auth(req, res, next) {
   const auth = req.headers.authorization
@@ -35,8 +35,11 @@ router.post('/image', auth, async (req, res) => {
     const mimeType = matches[1]
     const base64Data = matches[2]
     const ext = mimeType.split('/')[1] || 'png'
-    const name = `${req.user.id}_${Date.now()}_${filename || 'artwork'}.${ext}`
+    // Strip existing extension from filename to avoid .png.png
+    const baseName = (filename || 'artwork').replace(/\.[^.]+$/, '')
+    const name = `${req.user.id}_${Date.now()}_${baseName}.${ext}`
     const filePath = join(UPLOAD_DIR, name)
+    mkdirSync(UPLOAD_DIR, { recursive: true })
 
     const buffer = Buffer.from(base64Data, 'base64')
     writeFileSync(filePath, buffer)
